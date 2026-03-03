@@ -1,0 +1,378 @@
+---
+title: Nodes
+description: Understanding the building blocks of Flowise workflows
+---
+
+## What are Nodes?
+
+Nodes are the fundamental building blocks of both chatflows and agentflows in Flowise. Each node represents a specific component, tool, or functionality that can be visually connected to create AI workflows. Think of nodes as Lego blocks that snap together to build complex AI applications.
+
+<Info>
+Flowise dynamically loads nodes from the `flowise-components` package at runtime, making the system extensible and modular.
+</Info>
+
+## Node Architecture
+
+### Node Structure
+
+Every node in Flowise implements the `INode` interface:
+
+```typescript
+interface INode {
+  // Basic Properties
+  label: string          // Display name in the UI
+  name: string          // Unique identifier
+  version: number       // Node version for compatibility
+  type: string          // Node type classification
+  icon: string          // Path to icon file (SVG, PNG, JPG)
+  category: string      // Category for organization
+  description: string   // What this node does
+  
+  // Advanced Properties
+  baseClasses: string[]     // Compatible connection types
+  tags?: string[]           // Filtering and search tags
+  badge?: string            // Visual badge (e.g., "NEW", "BETA")
+  color?: string            // Node color in the canvas
+  author?: string           // Creator (for community nodes)
+  documentation?: string    // Link to docs
+  
+  // Configuration
+  inputs?: INodeParams[]    // Input parameters
+  outputs?: INodeOutputsValue[] // Output types
+  credential?: INodeParams  // Required credentials
+  
+  // Methods
+  init?: Function          // Initialize node instance
+  run?: Function          // Execute node logic
+  loadMethods?: Object    // Dynamic option loading
+}
+```
+
+### Node Categories
+
+Flowise organizes nodes into categories:
+
+<CardGroup cols={3}>
+  <Card title="Chat Models" icon="comments">
+    LLM integrations (OpenAI, Anthropic, Google, etc.)
+  </Card>
+  <Card title="Agents" icon="robot">
+    Autonomous agents with tool-calling capabilities
+  </Card>
+  <Card title="Agent Flows" icon="diagram-project">
+    Specialized nodes for agentflow workflows
+  </Card>
+  <Card title="Tools" icon="wrench">
+    External integrations and utilities
+  </Card>
+  <Card title="Document Loaders" icon="file">
+    Load data from various sources
+  </Card>
+  <Card title="Vector Stores" icon="database">
+    Store and retrieve embeddings
+  </Card>
+  <Card title="Embeddings" icon="vector-square">
+    Convert text to vector representations
+  </Card>
+  <Card title="Memory" icon="brain">
+    Conversation history management
+  </Card>
+  <Card title="Chains" icon="link">
+    Pre-built workflow patterns
+  </Card>
+</CardGroup>
+
+<Note>
+Nodes in the "Analytic" and "SpeechToText" categories are handled differently and may not appear in the standard node palette.
+</Note>
+
+## Node Inputs and Outputs
+
+### Input Parameters
+
+Nodes accept various input types:
+
+```typescript
+type NodeParamsType = 
+  | 'string'           // Text input
+  | 'number'           // Numeric input
+  | 'boolean'          // Toggle/checkbox
+  | 'password'         // Masked text
+  | 'json'            // JSON editor
+  | 'code'            // Code editor
+  | 'options'         // Dropdown selection
+  | 'multiOptions'    // Multiple selections
+  | 'asyncOptions'    // Dynamically loaded options
+  | 'file'            // File upload
+  | 'folder'          // Folder selection
+  | 'date'            // Date picker
+  | 'datagrid'        // Table/grid input
+  | 'tabs'            // Tabbed interface
+```
+
+**Advanced Input Features:**
+
+- **Variable Support**: Accept runtime variables with `acceptVariable: true`
+- **Conditional Display**: Show/hide based on other inputs using `show` and `hide`
+- **Dynamic Loading**: Load options from APIs with `loadMethod`
+- **Array Inputs**: Repeatable input groups with `array` property
+
+### Output Anchors
+
+Nodes expose outputs through anchors:
+
+```typescript
+interface INodeOutputsValue {
+  label: string        // Display name
+  name: string        // Identifier
+  baseClasses?: string[] // Compatible types
+  description?: string
+  hidden?: boolean    // Hide from UI
+  isAnchor?: boolean  // Can connect to other nodes
+}
+```
+
+### Connection Validation
+
+Flowise validates connections based on `baseClasses`:
+
+- Nodes can only connect if output and input base classes are compatible
+- Example: A "ChatOpenAI" node (baseClasses: ["ChatOpenAI", "BaseChatModel"]) can connect to inputs accepting "BaseChatModel"
+
+## Node Lifecycle
+
+### Initialization
+
+When a node is loaded:
+
+<Steps>
+  <Step title="Class Instantiation">
+    Node class is imported and instantiated from the components package
+  </Step>
+  <Step title="Icon Resolution">
+    Icon paths are converted to absolute paths for the UI
+  </Step>
+  <Step title="Credential Mapping">
+    If the node requires credentials, they're linked to available credential types
+  </Step>
+  <Step title="Registration">
+    Node is added to the `componentNodes` pool and becomes available in the palette
+  </Step>
+</Steps>
+
+### Execution
+
+When a workflow runs:
+
+<Steps>
+  <Step title="Dependency Resolution">
+    Flowise builds a directed graph of node dependencies
+  </Step>
+  <Step title="Sequential Execution">
+    Nodes execute in topological order (dependencies first)
+  </Step>
+  <Step title="Data Passing">
+    Output from each node is passed to connected downstream nodes
+  </Step>
+  <Step title="State Management">
+    Node execution data is tracked for debugging and analytics
+  </Step>
+</Steps>
+
+## Node Data Flow
+
+Data flows through nodes via the `IReactFlowNode` structure:
+
+```typescript
+interface IReactFlowNode {
+  id: string                      // Unique node instance ID
+  type: string                    // Node type
+  position: { x: number, y: number } // Canvas position
+  data: INodeData                 // Node configuration and values
+}
+
+interface INodeData {
+  id: string
+  name: string
+  label: string
+  type?: string
+  category?: string
+  version?: number
+  description?: string
+  
+  // Configuration
+  inputAnchors?: INodeParams[]    // Available input connections
+  inputParams?: INodeParams[]     // Parameter definitions
+  inputValues?: Record<string, unknown> // User-entered values
+  outputAnchors?: INodeParams[]   // Available output connections
+  
+  // Execution State (Agentflows)
+  status?: 'INPROGRESS' | 'FINISHED' | 'ERROR' | 'STOPPED'
+  error?: string
+  warning?: string
+}
+```
+
+## Special Node Types
+
+### Agentflow Nodes
+
+Nodes in the "Agent Flows" category have unique capabilities:
+
+**Start Node**
+- Entry point for agentflows
+- Accepts chat or form inputs
+- Hides input anchors (`hideInput: true`)
+
+**Agent Node**
+- Dynamic tool selection
+- Multi-step reasoning
+- Memory and knowledge integration
+- Structured output support
+
+**Condition Node**
+- Branching logic based on expressions
+- Multiple output paths
+
+**Iteration Node**
+- Loop through arrays
+- Process items sequentially or in parallel
+
+### Tool Nodes
+
+Tool nodes can be used by agents:
+
+- Must be in the "Tools" or "Tools (MCP)" category
+- Implement a callable interface
+- Return results that agents can interpret
+- Support human-in-the-loop approvals
+
+<Tip>
+Tool nodes are converted to LangChain `Tool` instances at runtime, with schemas automatically generated from their input parameters.
+</Tip>
+
+## Node Configuration
+
+### Load Methods
+
+Nodes can define dynamic option loaders:
+
+```typescript
+loadMethods = {
+  async listModels(nodeData: INodeData, options: ICommonObject) {
+    // Fetch available models from API
+    const models = await fetchModels()
+    return models.map(m => ({
+      label: m.name,
+      name: m.id,
+      description: m.description
+    }))
+  }
+}
+```
+
+This populates dropdowns dynamically based on:
+- Available credentials
+- API responses
+- Other node configurations
+- Workspace context
+
+### Credential Integration
+
+Nodes that require API keys or authentication:
+
+```typescript
+credential: {
+  label: 'Connect Credential',
+  name: 'credential',
+  type: 'credential',
+  credentialNames: ['anthropicApi', 'openAIApi']
+}
+```
+
+Credentials are injected at runtime and never exposed in the flow data.
+
+## Visual Properties
+
+### Node Appearance
+
+Customize how nodes look on the canvas:
+
+```typescript
+{
+  label: 'ChatAnthropic',
+  name: 'chatAnthropic',
+  icon: 'anthropic.svg',
+  color: '#D97757',        // Background color
+  badge: 'NEW',           // Corner badge
+}
+```
+
+### Node States
+
+In agentflows, nodes display execution status:
+
+- **Default**: No execution yet
+- **In Progress**: Currently executing (animated indicator)
+- **Finished**: Successfully completed (checkmark)
+- **Error**: Failed execution (error icon)
+- **Stopped**: Manually stopped
+
+## Creating Custom Nodes
+
+<Note>
+While this documentation focuses on using existing nodes, Flowise supports custom node development. Custom nodes are:
+- Created as TypeScript classes implementing `INode`
+- Placed in the components package
+- Automatically loaded at startup
+- Available in the node palette if not disabled
+</Note>
+
+Community nodes are supported but can be disabled with the `SHOW_COMMUNITY_NODES` environment variable.
+
+## Node Pool Management
+
+Flowise manages available nodes through the `NodesPool` class:
+
+```typescript
+class NodesPool {
+  componentNodes: IComponentNodes = {}
+  componentCredentials: IComponentCredentials = {}
+  
+  async initialize() {
+    await this.initializeNodes()
+    await this.initializeCredentials()
+  }
+}
+```
+
+Nodes are:
+- Loaded from `flowise-components/dist/nodes`
+- Filtered based on environment variables (disabled nodes)
+- Filtered by category (analytic nodes excluded)
+- Filtered by community node settings
+
+## Best Practices
+
+<Tip>
+**When Building Workflows**
+- Start with pre-built chain nodes for common patterns
+- Use the search function to find relevant nodes quickly
+- Check node documentation links for detailed configuration
+- Group related nodes visually for better organization
+- Name node instances descriptively (not just the default name)
+</Tip>
+
+<Warning>
+**Common Issues**
+- Connection errors often mean incompatible base classes
+- Missing credentials prevent node execution
+- Deprecated nodes may be removed in future versions
+- Community nodes may have different support levels
+</Warning>
+
+## Related Concepts
+
+- [Chatflows](/concepts/chatflows) - Using nodes in sequential workflows
+- [Agentflows](/concepts/agentflows) - Using nodes in autonomous workflows
+- [Credentials](/concepts/credentials) - Authenticating nodes with external services

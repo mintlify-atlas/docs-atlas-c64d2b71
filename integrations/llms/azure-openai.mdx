@@ -1,0 +1,272 @@
+---
+title: 'Azure OpenAI'
+description: 'Deploy OpenAI models through Microsoft Azure with enterprise features and compliance'
+icon: 'microsoft'
+---
+
+## Overview
+
+Azure OpenAI Service provides REST API access to OpenAI models including GPT-4, GPT-3.5-Turbo, and embeddings through Microsoft's Azure platform with enterprise-grade security and compliance.
+
+## Setup
+
+<Steps>
+  <Step title="Create Azure OpenAI Resource">
+    In Azure Portal, create an Azure OpenAI resource in your subscription
+  </Step>
+  
+  <Step title="Deploy a Model">
+    Navigate to Azure OpenAI Studio and deploy a model (e.g., gpt-4, gpt-35-turbo)
+  </Step>
+  
+  <Step title="Get Connection Details">
+    Collect:
+    - API Key (from Keys and Endpoint)
+    - Instance Name (e.g., `my-openai-resource`)
+    - Deployment Name (the name you gave your deployment)
+    - API Version (e.g., `2024-02-01`)
+  </Step>
+  
+  <Step title="Add Credential in Flowise">
+    Create an Azure OpenAI API credential with your details
+  </Step>
+</Steps>
+
+## Configuration
+
+### Basic Parameters
+
+<ParamField path="credential" type="credential" required>
+  Azure OpenAI API credential containing:
+  - Azure OpenAI API Key
+  - Azure OpenAI API Instance Name
+  - Azure OpenAI API Deployment Name
+  - Azure OpenAI API Version
+</ParamField>
+
+<ParamField path="modelName" type="string" required>
+  The deployed model name in your Azure OpenAI resource. Common deployments:
+  - `gpt-4`
+  - `gpt-4-32k`
+  - `gpt-35-turbo`
+  - `gpt-35-turbo-16k`
+</ParamField>
+
+<ParamField path="temperature" type="number" default={0.9}>
+  Sampling temperature between 0 and 2. Higher values increase randomness
+</ParamField>
+
+<ParamField path="streaming" type="boolean" default={true}>
+  Enable streaming for real-time token generation
+</ParamField>
+
+### Advanced Parameters
+
+<ParamField path="maxTokens" type="number">
+  Maximum tokens to generate. Varies by model:
+  - GPT-4: up to 8192
+  - GPT-4-32k: up to 32768  
+  - GPT-3.5-Turbo: up to 4096
+</ParamField>
+
+<ParamField path="topP" type="number">
+  Nucleus sampling parameter (0-1). Alternative to temperature
+</ParamField>
+
+<ParamField path="frequencyPenalty" type="number">
+  Reduce repetition of token sequences (-2.0 to 2.0)
+</ParamField>
+
+<ParamField path="presencePenalty" type="number">
+  Encourage talking about new topics (-2.0 to 2.0)
+</ParamField>
+
+<ParamField path="timeout" type="number">
+  Request timeout in milliseconds
+</ParamField>
+
+### Vision & Multimodal
+
+<ParamField path="allowImageUploads" type="boolean" default={false}>
+  Enable image analysis for vision-capable models like GPT-4 Turbo with Vision
+</ParamField>
+
+<ParamField path="imageResolution" type="string" default="low">
+  Image detail level: `low`, `high`, or `auto`
+</ParamField>
+
+### Reasoning Models
+
+<Note>
+Azure OpenAI supports o1 and o3 reasoning models with special parameters.
+</Note>
+
+<ParamField path="reasoning" type="boolean" default={false}>
+  Enable reasoning mode for o1/o3 deployments
+</ParamField>
+
+<ParamField path="reasoningEffort" type="string">
+  Set reasoning effort: `low`, `medium`, or `high`
+</ParamField>
+
+<ParamField path="reasoningSummary" type="string">
+  Get reasoning summary: `auto`, `concise`, or `detailed`
+</ParamField>
+
+### Custom Configuration
+
+<ParamField path="basePath" type="string">
+  Custom Azure OpenAI endpoint base path (overrides default)
+</ParamField>
+
+<ParamField path="baseOptions" type="json">
+  Additional HTTP headers and configuration as JSON
+</ParamField>
+
+## Usage Examples
+
+### Basic Azure GPT-4 Setup
+
+```typescript
+// Credential configuration
+Azure OpenAI API Key: your-api-key
+Azure OpenAI Instance Name: my-openai-instance
+Azure OpenAI Deployment Name: gpt-4-deployment
+Azure OpenAI API Version: 2024-02-01
+
+// Node configuration
+Model Name: gpt-4
+Temperature: 0.7
+Max Tokens: 2000
+```
+
+### GPT-4 Vision
+
+```typescript
+// Deploy gpt-4-vision-preview in Azure
+Model Name: gpt-4-vision
+Allow Image Uploads: true
+Image Resolution: high
+Max Tokens: 4096
+```
+
+### Using Environment Variables
+
+<Note>
+You can configure Azure OpenAI credentials via environment variables for server-wide defaults.
+</Note>
+
+```bash
+AZURE_OPENAI_API_KEY=your-api-key
+AZURE_OPENAI_API_INSTANCE_NAME=my-instance
+AZURE_OPENAI_API_DEPLOYMENT_NAME=gpt-4
+AZURE_OPENAI_API_VERSION=2024-02-01
+```
+
+When these are set, the credential becomes optional in Flowise.
+
+### Private Endpoint
+
+```typescript
+// For private Azure endpoints
+Base Path: https://my-private-endpoint.openai.azure.com
+Base Options: {
+  "headers": {
+    "Custom-Header": "value"
+  }
+}
+```
+
+## Azure vs OpenAI Direct
+
+| Feature | Azure OpenAI | OpenAI Direct |
+|---------|--------------|---------------|
+| Data Privacy | Stays in Azure region | Sent to OpenAI |
+| Compliance | Azure compliance certifications | OpenAI policies |
+| SLA | Azure SLA (99.9%) | OpenAI uptime |
+| Pricing | Pay-as-you-go or reserved | Pay-per-token |
+| Model Updates | Controlled deployment | Automatic |
+| Enterprise Features | VNET, Private Link | Standard |
+
+## Best Practices
+
+<CardGroup cols={2}>
+  <Card title="Security" icon="shield">
+    - Use Managed Identity when possible
+    - Enable Private Endpoints for production
+    - Rotate API keys regularly
+    - Use RBAC for access control
+  </Card>
+  
+  <Card title="Deployment" icon="rocket">
+    - Deploy models in same region as app
+    - Use provisioned throughput for production
+    - Monitor quota and limits
+    - Test in non-production first
+  </Card>
+  
+  <Card title="Cost Management" icon="dollar-sign">
+    - Use reserved capacity for predictable workloads
+    - Monitor token usage in Azure Portal
+    - Set up budget alerts
+    - Use appropriate model tiers
+  </Card>
+  
+  <Card title="Performance" icon="gauge">
+    - Use streaming for better UX
+    - Implement caching where appropriate
+    - Monitor latency metrics
+    - Scale deployments based on demand
+  </Card>
+</CardGroup>
+
+## Common Issues
+
+<AccordionGroup>
+  <Accordion title="Deployment Not Found">
+    Ensure:
+    - Deployment name matches exactly (case-sensitive)
+    - Model is successfully deployed in Azure OpenAI Studio
+    - Instance name is correct
+    - API version is supported
+  </Accordion>
+  
+  <Accordion title="Quota Exceeded">
+    Azure OpenAI has quota limits per region and subscription:
+    - Check quota in Azure Portal
+    - Request quota increase if needed
+    - Consider multiple deployments
+    - Use provisioned throughput
+  </Accordion>
+  
+  <Accordion title="Network/CORS Issues">
+    For private endpoints:
+    - Verify VNET configuration
+    - Check Private Link setup
+    - Ensure DNS resolution
+    - Verify firewall rules
+  </Accordion>
+  
+  <Accordion title="API Version Mismatch">
+    Different API versions support different features:
+    - Use latest stable version (2024-02-01+)
+    - Check Azure OpenAI API changelog
+    - Update version in credentials
+  </Accordion>
+</AccordionGroup>
+
+## Monitoring & Diagnostics
+
+Azure provides built-in monitoring:
+
+- **Metrics**: Track requests, tokens, latency
+- **Logs**: Enable diagnostic logging
+- **Alerts**: Set up alerts for failures or quota
+- **Cost Management**: Track spending by deployment
+
+## Related Resources
+
+- [Azure OpenAI Documentation](https://learn.microsoft.com/azure/ai-services/openai/)
+- [Quickstart Guide](https://learn.microsoft.com/azure/ai-services/openai/quickstart)
+- [Model Deployments](https://learn.microsoft.com/azure/ai-services/openai/how-to/create-resource)
+- [Pricing Calculator](https://azure.microsoft.com/pricing/details/cognitive-services/openai-service/)

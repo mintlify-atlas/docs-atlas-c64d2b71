@@ -1,0 +1,310 @@
+---
+title: Agentflows
+description: Build autonomous AI workflows with multi-step reasoning and dynamic decision-making
+---
+
+## What are Agentflows?
+
+Agentflows are advanced, autonomous workflows that enable AI agents to dynamically choose tools, make decisions, and perform multi-step reasoning during runtime. Unlike traditional chatflows that follow a pre-defined path, agentflows adapt their behavior based on context and can orchestrate complex tasks independently.
+
+<Info>
+Agentflows are designed for scenarios requiring intelligent decision-making, dynamic tool selection, and adaptive workflows that can handle unpredictable user inputs.
+</Info>
+
+## Key Differences from Chatflows
+
+<CardGroup cols={2}>
+  <Card title="Autonomous Execution" icon="robot">
+    Agents decide which actions to take based on the current context and available tools
+  </Card>
+  <Card title="Multi-Step Reasoning" icon="brain">
+    Break down complex tasks into smaller steps and execute them sequentially
+  </Card>
+  <Card title="Dynamic Tool Selection" icon="wrench">
+    Choose and utilize different tools during runtime based on requirements
+  </Card>
+  <Card title="State Management" icon="database">
+    Maintain and update workflow state throughout execution
+  </Card>
+</CardGroup>
+
+## Agentflow Architecture
+
+### Core Components
+
+Agentflows are built from specialized nodes in the "Agent Flows" category:
+
+**Start Node** (`startAgentflow`)
+- Entry point for the agentflow
+- Supports two input types:
+  - **Chat Input**: Traditional conversational interface
+  - **Form Input**: Structured data collection with custom fields
+- Defines initial runtime state
+
+**Agent Node** (`agentAgentflow`)
+- The brain of the agentflow
+- Dynamically selects and executes tools
+- Supports multiple AI models (OpenAI, Anthropic, Google, etc.)
+- Handles memory, knowledge bases, and structured outputs
+
+**Control Flow Nodes**
+- **Condition**: Branch execution based on logic
+- **Iteration**: Loop through data arrays
+- **Human Input**: Pause for human approval or input
+
+**Action Nodes**
+- **HTTP**: Make API calls
+- **Execute Flow**: Call other chatflows or agentflows
+- **Custom Function**: Run JavaScript code
+- **Direct Reply**: Return responses to users
+
+### Flow State
+
+Agentflows maintain runtime state throughout execution:
+
+```typescript
+interface IFlowState {
+  key: string    // State variable name
+  value: string  // Current value
+}
+```
+
+<Tip>
+Use the "Update Flow State" feature in Agent nodes to store and pass data between nodes during execution.
+</Tip>
+
+## Building an Agent
+
+The Agent node is the most powerful component in agentflows:
+
+### Model Selection
+
+Choose from supported chat models:
+- ChatOpenAI
+- ChatAnthropic (Claude)
+- ChatGoogleGenerativeAI (Gemini)
+- AzureChatOpenAI
+- And more...
+
+### Built-in Tools
+
+Different models offer platform-specific tools:
+
+**OpenAI Built-in Tools**
+- Web Search (preview)
+- Code Interpreter
+- Image Generation
+
+**Anthropic Built-in Tools**
+- Web Search
+- Web Fetch
+
+**Gemini Built-in Tools**
+- URL Context
+- Google Search
+- Code Execution
+
+<Note>
+Built-in tools are provided by the LLM provider and executed in their infrastructure.
+</Note>
+
+### Custom Tools
+
+Add external tools from the Flowise library:
+- API integrations (Airtable, Google Calendar, etc.)
+- Search tools (SerpAPI, BraveSearch, etc.)
+- Databases and vector stores
+- Custom code execution
+
+Each tool can be configured to require human input before execution for sensitive operations.
+
+### Knowledge Integration
+
+Equip agents with knowledge from two sources:
+
+**Document Stores**
+```typescript
+interface IKnowledgeBase {
+  documentStore: string          // Pre-upserted document store ID
+  docStoreDescription: string    // Context for when to use this knowledge
+  returnSourceDocuments: boolean // Include source references
+}
+```
+
+**Vector Embeddings**
+```typescript
+interface IKnowledgeBaseVSEmbeddings {
+  vectorStore: string           // Vector store configuration
+  embeddingModel: string        // Embedding model to use
+  knowledgeName: string         // Short identifier
+  knowledgeDescription: string  // When to search this knowledge
+  returnSourceDocuments: boolean
+}
+```
+
+### Memory Management
+
+Agents support different memory strategies:
+
+<CardGroup cols={2}>
+  <Card title="All Messages">
+    Retrieve complete conversation history
+  </Card>
+  <Card title="Window Size">
+    Keep only the last N messages
+  </Card>
+  <Card title="Conversation Summary">
+    Summarize the entire conversation
+  </Card>
+  <Card title="Summary Buffer">
+    Summarize once token limit is reached
+  </Card>
+</CardGroup>
+
+### Structured Output
+
+Force agents to return data in a specific JSON schema:
+
+```json
+{
+  "key": "customer_sentiment",
+  "type": "enum",
+  "enumValues": "positive, neutral, negative",
+  "description": "The detected sentiment of the customer"
+}
+```
+
+Supported types:
+- `string`: Text values
+- `stringArray`: Array of strings
+- `number`: Numeric values
+- `boolean`: True/false
+- `enum`: Predefined options
+- `jsonArray`: Complex nested structures
+
+## Execution Flow
+
+Agentflows execute differently than chatflows:
+
+<Steps>
+  <Step title="Initialization">
+    Start node receives input (chat message or form data) and sets initial state
+  </Step>
+  <Step title="Agent Processing">
+    Agent analyzes the input and available tools, then decides on actions
+  </Step>
+  <Step title="Tool Execution">
+    Selected tools are executed, potentially in multiple iterations
+  </Step>
+  <Step title="State Updates">
+    Runtime state is updated with results from tool executions
+  </Step>
+  <Step title="Control Flow">
+    Condition and iteration nodes direct execution to appropriate paths
+  </Step>
+  <Step title="Completion">
+    Direct Reply or final agent response returns results to the user
+  </Step>
+</Steps>
+
+## Execution States
+
+Agentflows track execution state:
+
+```typescript
+type ExecutionState = 
+  | 'INPROGRESS'  // Currently executing
+  | 'FINISHED'    // Completed successfully
+  | 'ERROR'       // Failed with an error
+  | 'TERMINATED'  // Manually stopped
+  | 'TIMEOUT'     // Exceeded time limit
+  | 'STOPPED'     // Gracefully stopped
+```
+
+<Note>
+Execution data is stored separately from the chatflow definition, allowing you to track and audit workflow runs.
+</Note>
+
+## Human-in-the-Loop
+
+Agentflows support human approval for sensitive operations:
+
+1. Mark tools as "Require Human Input"
+2. Execution pauses when the tool is invoked
+3. Human reviews the tool call and parameters
+4. Human approves or rejects the action
+5. Execution continues based on the decision
+
+```typescript
+interface IHumanInput {
+  type: 'proceed' | 'reject'
+  // Additional context...
+}
+```
+
+## Advanced Features
+
+### Iteration Context
+
+Loop through arrays and process each item:
+- Access current item with variables
+- Track iteration index
+- Aggregate results across iterations
+
+### Nested Flows
+
+Call other chatflows or agentflows:
+- Reuse existing workflows as building blocks
+- Pass state between parent and child flows
+- Handle recursive scenarios
+
+### Streaming Responses
+
+For real-time user experiences:
+- Stream agent responses as they're generated
+- Display tool usage in real-time
+- Show source documents as they're retrieved
+- Render artifacts (images, code) progressively
+
+## Example Use Cases
+
+**Research Assistant**
+- Uses web search, document retrieval, and code execution
+- Synthesizes information from multiple sources
+- Formats findings into structured reports
+
+**Customer Service Automation**
+- Searches knowledge bases and CRM systems
+- Escalates to human agents when needed
+- Updates ticket status and customer records
+
+**Data Processing Pipeline**
+- Fetches data from APIs
+- Processes with custom functions
+- Stores results in databases
+- Sends notifications based on conditions
+
+## Best Practices
+
+<Tip>
+**Design Principles**
+- Give agents clear descriptions of when to use each tool
+- Start with minimal tools and add complexity gradually
+- Use structured outputs for downstream integrations
+- Implement human approval for sensitive operations
+- Set appropriate memory windows to control token usage
+</Tip>
+
+<Warning>
+**Common Pitfalls**
+- Too many tools can confuse the agent (keep it focused)
+- Vague tool descriptions lead to incorrect selections
+- Missing error handling can cause workflow failures
+- Unbounded loops can consume excessive tokens
+</Warning>
+
+## Related Concepts
+
+- [Chatflows](/concepts/chatflows) - Traditional sequential workflows
+- [Nodes](/concepts/nodes) - Building blocks for agentflows
+- [Credentials](/concepts/credentials) - Managing tool authentication

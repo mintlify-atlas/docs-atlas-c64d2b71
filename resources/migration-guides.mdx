@@ -1,0 +1,378 @@
+---
+title: Migration Guides
+description: Step-by-step guides for upgrading between major versions of Flowise
+---
+
+This guide helps you migrate between major versions of Flowise. Major version upgrades may include breaking changes that require updates to your configuration, chatflows, or deployment.
+
+<Warning>
+Always backup your database and chatflows before upgrading to a new major version.
+</Warning>
+
+## Pre-Migration Checklist
+
+Before upgrading, complete these steps:
+
+<Steps>
+  <Step title="Backup Your Database">
+    **SQLite**:
+    ```bash
+    cp ~/.flowise/database.sqlite ~/backups/database-$(date +%Y%m%d).sqlite
+    ```
+    
+    **PostgreSQL**:
+    ```bash
+    pg_dump -U flowise flowise > ~/backups/flowise-$(date +%Y%m%d).sql
+    ```
+    
+    **MySQL**:
+    ```bash
+    mysqldump -u flowise -p flowise > ~/backups/flowise-$(date +%Y%m%d).sql
+    ```
+  </Step>
+  
+  <Step title="Export Chatflows">
+    Export all chatflows as JSON from the Flowise UI:
+    1. Open each chatflow
+    2. Click the export button
+    3. Save JSON files to a safe location
+  </Step>
+  
+  <Step title="Document Environment Variables">
+    Save your current `.env` configuration:
+    ```bash
+    cp packages/server/.env ~/backups/env-backup-$(date +%Y%m%d)
+    ```
+  </Step>
+  
+  <Step title="Review Release Notes">
+    Read the [release notes](https://github.com/FlowiseAI/Flowise/releases) for breaking changes and new features.
+  </Step>
+  
+  <Step title="Test in Development">
+    If possible, test the upgrade in a development environment first.
+  </Step>
+</Steps>
+
+## General Upgrade Process
+
+### NPM Installation
+
+<Steps>
+  <Step title="Stop Flowise">
+    Stop the running Flowise instance.
+  </Step>
+  
+  <Step title="Update Package">
+    ```bash
+    npm update -g flowise
+    ```
+  </Step>
+  
+  <Step title="Verify Version">
+    ```bash
+    npx flowise --version
+    ```
+  </Step>
+  
+  <Step title="Start Flowise">
+    ```bash
+    npx flowise start
+    ```
+    
+    Database migrations will run automatically on first start.
+  </Step>
+  
+  <Step title="Verify Functionality">
+    - Test existing chatflows
+    - Verify API credentials
+    - Check custom components
+  </Step>
+</Steps>
+
+### Docker Installation
+
+<Steps>
+  <Step title="Stop Container">
+    ```bash
+    docker stop flowise
+    ```
+  </Step>
+  
+  <Step title="Pull Latest Image">
+    ```bash
+    docker pull flowiseai/flowise:latest
+    ```
+  </Step>
+  
+  <Step title="Remove Old Container">
+    ```bash
+    docker rm flowise
+    ```
+  </Step>
+  
+  <Step title="Start New Container">
+    ```bash
+    docker run -d \
+      -p 3000:3000 \
+      -v flowise_data:/root/.flowise \
+      --name flowise \
+      flowiseai/flowise
+    ```
+    
+    Make sure to preserve your volume mounts and environment variables.
+  </Step>
+</Steps>
+
+### From Source
+
+<Steps>
+  <Step title="Stop Development Server">
+    Stop any running Flowise processes.
+  </Step>
+  
+  <Step title="Update Repository">
+    ```bash
+    cd Flowise
+    git fetch origin
+    git checkout main
+    git pull origin main
+    ```
+  </Step>
+  
+  <Step title="Clean and Reinstall">
+    ```bash
+    pnpm clean
+    pnpm install
+    ```
+  </Step>
+  
+  <Step title="Rebuild">
+    ```bash
+    pnpm build
+    ```
+  </Step>
+  
+  <Step title="Start Flowise">
+    ```bash
+    pnpm start
+    ```
+  </Step>
+</Steps>
+
+## Version-Specific Migrations
+
+<Note>
+Detailed migration guides for specific version upgrades will be added here as major versions are released.
+</Note>
+
+### Migrating to v3.x
+
+Flowise v3.x is the current major version. If you're upgrading from v2.x or earlier:
+
+<AccordionGroup>
+  <Accordion title="Database Changes">
+    - Automatic migrations run on first startup
+    - No manual intervention typically required
+    - Review logs for migration errors
+    
+    If migration fails:
+    ```bash
+    # Check logs for errors
+    LOG_LEVEL=debug npx flowise start
+    ```
+  </Accordion>
+  
+  <Accordion title="Environment Variables">
+    Review new environment variables:
+    - Check the [Environment Variables](/configuration/environment-variables) documentation
+    - Update your `.env` file with new options
+    - Remove deprecated variables
+  </Accordion>
+  
+  <Accordion title="Component Updates">
+    - Some components may have new required fields
+    - Custom components may need updates
+    - Test all chatflows after upgrade
+  </Accordion>
+</AccordionGroup>
+
+## Common Migration Issues
+
+### Database Migration Failures
+
+**Problem**: Database migration fails on startup.
+
+**Solutions**:
+
+1. **Check database permissions**:
+   ```bash
+   # SQLite
+   chmod 644 ~/.flowise/database.sqlite
+   
+   # PostgreSQL/MySQL
+   # Ensure user has ALTER TABLE permissions
+   ```
+
+2. **Review migration logs**:
+   ```bash
+   LOG_LEVEL=debug npx flowise start
+   ```
+
+3. **Manual migration** (advanced):
+   ```bash
+   # If automatic migration fails, contact support
+   # Don't manually edit the database without guidance
+   ```
+
+### Chatflow Compatibility Issues
+
+**Problem**: Existing chatflows don't work after upgrade.
+
+**Solutions**:
+
+1. **Check component versions**: Some components may have breaking changes
+2. **Review deprecated features**: Replace with recommended alternatives
+3. **Re-configure nodes**: Some nodes may require reconfiguration
+4. **Import from backup**: If needed, restore from JSON export
+
+### Custom Component Issues
+
+**Problem**: Custom components stop working after upgrade.
+
+**Solutions**:
+
+1. **Update component interface**: Check if the component API changed
+2. **Rebuild components**:
+   ```bash
+   pnpm build
+   ```
+3. **Review component documentation**: Check for breaking changes
+4. **Update dependencies**: Ensure compatibility with new version
+
+## Rolling Back
+
+If you need to rollback to a previous version:
+
+### NPM Installation
+
+```bash
+# Install specific version
+npm install -g flowise@2.x.x
+
+# Restore database backup
+cp ~/backups/database-backup.sqlite ~/.flowise/database.sqlite
+
+# Start Flowise
+npx flowise start
+```
+
+### Docker Installation
+
+```bash
+# Use specific version tag
+docker pull flowiseai/flowise:2.x.x
+
+docker run -d \
+  -p 3000:3000 \
+  -v flowise_data:/root/.flowise \
+  --name flowise \
+  flowiseai/flowise:2.x.x
+```
+
+### From Source
+
+```bash
+cd Flowise
+git checkout v2.x.x
+pnpm clean
+pnpm install
+pnpm build
+pnpm start
+```
+
+<Warning>
+Rolling back may require restoring database backups. Database schemas from newer versions may not be compatible with older Flowise versions.
+</Warning>
+
+## Migration Best Practices
+
+<CardGroup cols={2}>
+  <Card title="Test First" icon="flask">
+    Always test upgrades in a development or staging environment before production
+  </Card>
+  
+  <Card title="Backup Everything" icon="database">
+    Backup databases, chatflows, and environment configuration
+  </Card>
+  
+  <Card title="Read Release Notes" icon="book">
+    Review all release notes between your current and target version
+  </Card>
+  
+  <Card title="Plan Downtime" icon="clock">
+    Schedule upgrades during low-traffic periods with planned downtime
+  </Card>
+</CardGroup>
+
+## Post-Migration Verification
+
+After upgrading, verify:
+
+<Steps>
+  <Step title="Application Starts">
+    Flowise starts without errors
+  </Step>
+  
+  <Step title="Database Connectivity">
+    Database connection is established
+  </Step>
+  
+  <Step title="Chatflows Load">
+    All chatflows appear in the UI
+  </Step>
+  
+  <Step title="Components Available">
+    All required components are visible
+  </Step>
+  
+  <Step title="API Credentials">
+    Saved credentials are accessible
+  </Step>
+  
+  <Step title="Test Execution">
+    Run test queries through your chatflows
+  </Step>
+  
+  <Step title="Custom Components">
+    Verify custom components work correctly
+  </Step>
+</Steps>
+
+## Getting Help with Migration
+
+<CardGroup cols={2}>
+  <Card title="Migration Issues" icon="discord" href="https://discord.gg/jbaHfsRVBW">
+    Get help on Discord for migration problems
+  </Card>
+  
+  <Card title="GitHub Discussions" icon="github" href="https://github.com/FlowiseAI/Flowise/discussions">
+    Search or ask about migration issues
+  </Card>
+  
+  <Card title="Release Notes" icon="file" href="https://github.com/FlowiseAI/Flowise/releases">
+    Review detailed release notes
+  </Card>
+  
+  <Card title="Changelog" icon="list" href="/resources/changelog">
+    View version history and changes
+  </Card>
+</CardGroup>
+
+## Professional Migration Support
+
+Need help with enterprise migrations?
+
+<Note>
+For enterprise deployments requiring migration assistance, consider [Flowise Cloud](https://flowiseai.com) which includes managed upgrades and professional support.
+</Note>

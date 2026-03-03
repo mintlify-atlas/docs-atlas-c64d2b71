@@ -1,0 +1,224 @@
+---
+title: Deployment Overview
+description: Learn how to deploy Flowise to production environments
+---
+
+Flowise provides multiple deployment options to suit different infrastructure needs and expertise levels. Whether you're running a quick local instance or deploying to enterprise cloud infrastructure, Flowise is designed to scale with your requirements.
+
+## Deployment Options
+
+Flowise can be deployed in several ways:
+
+<CardGroup cols={2}>
+  <Card title="Docker" icon="docker" href="/deployment/docker">
+    Deploy Flowise using Docker containers for consistent, isolated environments
+  </Card>
+  <Card title="Cloud Providers" icon="cloud" href="/deployment/cloud-providers">
+    Deploy to AWS, Azure, GCP, Digital Ocean, and other cloud platforms
+  </Card>
+  <Card title="Self-Hosting" icon="server" href="/deployment/self-hosting">
+    Install and run Flowise directly on your own servers
+  </Card>
+  <Card title="Flowise Cloud" icon="rocket" href="https://flowiseai.com">
+    Managed hosting with zero configuration required
+  </Card>
+</CardGroup>
+
+## Quick Start Methods
+
+### NPM Installation
+
+The fastest way to get started locally:
+
+```bash
+npm install -g flowise
+npx flowise start
+```
+
+Access Flowise at [http://localhost:3000](http://localhost:3000)
+
+### Docker
+
+Run Flowise in a container:
+
+```bash
+docker run -d --name flowise -p 3000:3000 flowiseai/flowise:latest
+```
+
+### Docker Compose
+
+For production deployments with persistence:
+
+```bash
+cd docker
+cp .env.example .env
+docker compose up -d
+```
+
+## System Requirements
+
+<Info>
+Flowise requires **Node.js >= 18.15.0** for local installations.
+</Info>
+
+### Minimum Requirements
+
+- **CPU**: 1 core
+- **RAM**: 2GB
+- **Storage**: 10GB available space
+- **Node.js**: Version 18.15.0 or higher (for non-Docker deployments)
+
+### Recommended for Production
+
+- **CPU**: 2+ cores
+- **RAM**: 4GB+
+- **Storage**: 20GB+ SSD
+- **Database**: PostgreSQL or MySQL (SQLite for development only)
+
+## Architecture Considerations
+
+### Monorepo Structure
+
+Flowise consists of three main modules:
+
+- **server**: Node.js backend serving API logic
+- **ui**: React frontend interface
+- **components**: Third-party node integrations
+- **api-documentation**: Auto-generated Swagger API documentation
+
+### Queue Mode (Advanced)
+
+For high-traffic production environments, Flowise supports queue mode with Redis:
+
+- **Main instance**: Handles HTTP requests and UI
+- **Worker instances**: Process chatflow executions asynchronously
+- **Redis**: Message queue for job distribution
+
+See the [Docker deployment guide](/deployment/docker) for queue mode setup.
+
+## Data Persistence
+
+<Warning>
+Always configure persistent storage for production deployments to prevent data loss.
+</Warning>
+
+By default, Flowise stores data in the following locations:
+
+- **Database**: `~/.flowise` (SQLite) or configured database
+- **Logs**: `~/.flowise/logs`
+- **Credentials**: `~/.flowise` (encrypted)
+- **Storage**: `~/.flowise/storage` (uploaded files)
+
+For Docker deployments, mount these directories as volumes:
+
+```yaml
+volumes:
+  - ~/.flowise:/root/.flowise
+```
+
+## Environment Configuration
+
+Flowise is highly configurable through environment variables. Key configuration areas:
+
+- **Database**: SQLite, PostgreSQL, or MySQL
+- **Authentication**: JWT tokens, session secrets
+- **Storage**: Local, AWS S3, or Google Cloud Storage
+- **Logging**: Debug levels and log paths
+- **Security**: CORS, proxy settings, HTTP deny lists
+- **Queue**: Redis configuration for distributed processing
+
+See the [Environment Variables](/configuration/environment-variables) documentation for complete details.
+
+## Production Best Practices
+
+<Steps>
+  <Step title="Use a Production Database">
+    Switch from SQLite to PostgreSQL or MySQL for better performance and reliability:
+    
+    ```bash
+    DATABASE_TYPE=postgres
+    DATABASE_HOST=your-db-host
+    DATABASE_NAME=flowise
+    DATABASE_USER=flowise_user
+    DATABASE_PASSWORD=secure_password
+    ```
+  </Step>
+  
+  <Step title="Configure Persistent Storage">
+    Set up cloud storage (S3 or GCS) or ensure local storage is properly backed up:
+    
+    ```bash
+    STORAGE_TYPE=s3
+    S3_STORAGE_BUCKET_NAME=flowise-storage
+    S3_STORAGE_REGION=us-east-1
+    ```
+  </Step>
+  
+  <Step title="Enable SSL/TLS">
+    Use a reverse proxy (nginx, Caddy) or cloud load balancer to handle HTTPS.
+  </Step>
+  
+  <Step title="Set Up Monitoring">
+    Enable metrics collection and configure health checks:
+    
+    ```bash
+    ENABLE_METRICS=true
+    METRICS_PROVIDER=prometheus
+    ```
+  </Step>
+  
+  <Step title="Secure Your Instance">
+    Configure authentication, secure cookies, and CORS policies:
+    
+    ```bash
+    SECURE_COOKIES=true
+    CORS_ORIGINS=https://yourdomain.com
+    TRUST_PROXY=true
+    ```
+  </Step>
+</Steps>
+
+## Security Considerations
+
+- **Encryption Keys**: Generate secure secrets using `openssl rand -hex 32`
+- **Database Security**: Enable SSL for database connections in production
+- **Network Security**: Configure firewall rules and security groups
+- **Secret Management**: Use AWS Secrets Manager or similar for sensitive credentials
+- **Regular Updates**: Keep Flowise and dependencies up to date
+
+## Scaling Strategies
+
+### Vertical Scaling
+
+Increase resources for your Flowise instance:
+
+```bash
+# Docker: Increase memory allocation
+NODE_OPTIONS=--max-old-space-size=8192
+```
+
+### Horizontal Scaling (Queue Mode)
+
+Deploy multiple worker instances for distributed processing:
+
+1. Main instance handles HTTP/UI requests
+2. Worker instances process chatflow executions
+3. Redis coordinates job distribution
+4. Shared database and storage across all instances
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Docker Deployment" icon="docker" href="/deployment/docker">
+    Deploy with Docker and Docker Compose
+  </Card>
+  <Card title="Cloud Providers" icon="cloud" href="/deployment/cloud-providers">
+    Deploy to AWS, Azure, GCP, and more
+  </Card>
+  <Card title="Self-Hosting Guide" icon="server" href="/deployment/self-hosting">
+    Install on your own infrastructure
+  </Card>
+  <Card title="Environment Variables" icon="gear" href="/configuration/environment-variables">
+    Configure your Flowise instance
+  </Card>
+</CardGroup>

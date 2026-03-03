@@ -1,0 +1,538 @@
+---
+title: Storage Configuration
+description: Configure file storage for uploads, documents, and assets
+---
+
+Flowise supports multiple storage backends for handling file uploads, document loaders, and other assets. Configure local filesystem, Amazon S3, or Google Cloud Storage based on your deployment needs.
+
+## Storage Types
+
+Flowise supports three storage backends:
+
+- **Local** - File system storage (default)
+- **S3** - Amazon S3 or S3-compatible storage
+- **GCS** - Google Cloud Storage
+
+## Local Storage (Default)
+
+Local file system storage is used by default with zero configuration.
+
+```bash
+# Optional: customize storage location
+STORAGE_TYPE=local
+BLOB_STORAGE_PATH=/path/to/storage/directory
+```
+
+<ParamField path="STORAGE_TYPE" type="string" default="local">
+  Storage backend type. Options: `local`, `s3`, `gcs`
+</ParamField>
+
+<ParamField path="BLOB_STORAGE_PATH" type="string" default="~/.flowise/storage">
+  Local directory path for file storage when using local storage
+</ParamField>
+
+### Default Storage Location
+
+- **Linux/macOS**: `~/.flowise/storage/`
+- **Windows**: `C:\Users\{username}\.flowise\storage\`
+
+### Local Storage Structure
+
+```
+~/.flowise/storage/
+├── uploads/          # User file uploads
+├── {chatflowId}/     # Per-chatflow document storage
+└── docustore/        # Document store files
+```
+
+<Note>
+Local storage is suitable for single-server deployments. For distributed or cloud deployments, use S3 or GCS.
+</Note>
+
+## Amazon S3 Storage
+
+Amazon S3 provides scalable cloud storage for production deployments.
+
+### Basic S3 Configuration
+
+```bash
+# S3 Storage Configuration
+STORAGE_TYPE=s3
+S3_STORAGE_BUCKET_NAME=my-flowise-bucket
+S3_STORAGE_ACCESS_KEY_ID=AKIAIOSFODNN7EXAMPLE
+S3_STORAGE_SECRET_ACCESS_KEY=wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY
+S3_STORAGE_REGION=us-east-1
+```
+
+<ParamField path="STORAGE_TYPE" type="string">
+  Set to `s3` for Amazon S3 storage
+</ParamField>
+
+<ParamField path="S3_STORAGE_BUCKET_NAME" type="string">
+  Name of the S3 bucket for storing files
+</ParamField>
+
+<ParamField path="S3_STORAGE_ACCESS_KEY_ID" type="string">
+  AWS access key ID with S3 permissions
+</ParamField>
+
+<ParamField path="S3_STORAGE_SECRET_ACCESS_KEY" type="string">
+  AWS secret access key
+</ParamField>
+
+<ParamField path="S3_STORAGE_REGION" type="string" default="us-west-2">
+  AWS region where the S3 bucket is located (e.g., `us-east-1`, `eu-west-1`)
+</ParamField>
+
+### Advanced S3 Options
+
+<ParamField path="S3_ENDPOINT_URL" type="string">
+  Custom S3 endpoint URL for S3-compatible services (MinIO, DigitalOcean Spaces, etc.)
+  
+  ```bash
+  # MinIO example
+  S3_ENDPOINT_URL=http://localhost:9000
+  
+  # DigitalOcean Spaces example
+  S3_ENDPOINT_URL=https://nyc3.digitaloceanspaces.com
+  ```
+</ParamField>
+
+<ParamField path="S3_FORCE_PATH_STYLE" type="boolean" default="false">
+  Force path-style URLs for S3 requests. Required for MinIO and some S3-compatible services.
+  
+  ```bash
+  # For MinIO or custom S3
+  S3_FORCE_PATH_STYLE=true
+  ```
+</ParamField>
+
+### S3 Setup Steps
+
+1. **Create S3 Bucket**
+
+```bash
+aws s3 mb s3://my-flowise-bucket --region us-east-1
+```
+
+2. **Configure Bucket CORS (if accessing from browser)**
+
+```json
+[
+  {
+    "AllowedHeaders": ["*"],
+    "AllowedMethods": ["GET", "PUT", "POST", "DELETE"],
+    "AllowedOrigins": ["https://your-flowise-domain.com"],
+    "ExposeHeaders": ["ETag"]
+  }
+]
+```
+
+3. **Create IAM User and Policy**
+
+```json
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Effect": "Allow",
+      "Action": [
+        "s3:PutObject",
+        "s3:GetObject",
+        "s3:DeleteObject",
+        "s3:ListBucket"
+      ],
+      "Resource": [
+        "arn:aws:s3:::my-flowise-bucket",
+        "arn:aws:s3:::my-flowise-bucket/*"
+      ]
+    }
+  ]
+}
+```
+
+4. **Configure Flowise**
+
+Add credentials to `.env`:
+
+```bash
+STORAGE_TYPE=s3
+S3_STORAGE_BUCKET_NAME=my-flowise-bucket
+S3_STORAGE_ACCESS_KEY_ID=your_access_key
+S3_STORAGE_SECRET_ACCESS_KEY=your_secret_key
+S3_STORAGE_REGION=us-east-1
+```
+
+### Using IAM Roles (Recommended for EC2/ECS)
+
+Instead of access keys, use IAM roles:
+
+```bash
+# .env - Only bucket and region needed
+STORAGE_TYPE=s3
+S3_STORAGE_BUCKET_NAME=my-flowise-bucket
+S3_STORAGE_REGION=us-east-1
+# No access keys needed - uses instance/task IAM role
+```
+
+Ensure your EC2 instance or ECS task has an IAM role with the S3 policy above.
+
+## Google Cloud Storage
+
+Google Cloud Storage provides scalable storage for GCP deployments.
+
+### Basic GCS Configuration
+
+```bash
+# GCS Storage Configuration
+STORAGE_TYPE=gcs
+GOOGLE_CLOUD_STORAGE_BUCKET_NAME=my-flowise-bucket
+GOOGLE_CLOUD_STORAGE_CREDENTIAL=/path/to/service-account-key.json
+GOOGLE_CLOUD_STORAGE_PROJ_ID=my-gcp-project
+GOOGLE_CLOUD_UNIFORM_BUCKET_ACCESS=true
+```
+
+<ParamField path="STORAGE_TYPE" type="string">
+  Set to `gcs` for Google Cloud Storage
+</ParamField>
+
+<ParamField path="GOOGLE_CLOUD_STORAGE_BUCKET_NAME" type="string">
+  Name of the GCS bucket for storing files
+</ParamField>
+
+<ParamField path="GOOGLE_CLOUD_STORAGE_CREDENTIAL" type="string">
+  Path to the service account JSON key file
+</ParamField>
+
+<ParamField path="GOOGLE_CLOUD_STORAGE_PROJ_ID" type="string">
+  Google Cloud project ID
+</ParamField>
+
+<ParamField path="GOOGLE_CLOUD_UNIFORM_BUCKET_ACCESS" type="boolean" default="true">
+  Enable uniform bucket-level access (recommended)
+</ParamField>
+
+### GCS Setup Steps
+
+1. **Create GCS Bucket**
+
+```bash
+gsutil mb -p my-gcp-project -l us-east1 gs://my-flowise-bucket
+```
+
+2. **Create Service Account**
+
+```bash
+# Create service account
+gcloud iam service-accounts create flowise-storage \
+  --display-name="Flowise Storage Service Account"
+
+# Grant storage permissions
+gcloud projects add-iam-policy-binding my-gcp-project \
+  --member="serviceAccount:flowise-storage@my-gcp-project.iam.gserviceaccount.com" \
+  --role="roles/storage.objectAdmin"
+
+# Create and download key
+gcloud iam service-accounts keys create ~/flowise-gcs-key.json \
+  --iam-account=flowise-storage@my-gcp-project.iam.gserviceaccount.com
+```
+
+3. **Configure CORS (if needed)**
+
+Create `cors.json`:
+
+```json
+[
+  {
+    "origin": ["https://your-flowise-domain.com"],
+    "method": ["GET", "PUT", "POST", "DELETE"],
+    "responseHeader": ["Content-Type"],
+    "maxAgeSeconds": 3600
+  }
+]
+```
+
+Apply CORS:
+
+```bash
+gsutil cors set cors.json gs://my-flowise-bucket
+```
+
+4. **Configure Flowise**
+
+```bash
+STORAGE_TYPE=gcs
+GOOGLE_CLOUD_STORAGE_BUCKET_NAME=my-flowise-bucket
+GOOGLE_CLOUD_STORAGE_CREDENTIAL=/path/to/flowise-gcs-key.json
+GOOGLE_CLOUD_STORAGE_PROJ_ID=my-gcp-project
+GOOGLE_CLOUD_UNIFORM_BUCKET_ACCESS=true
+```
+
+### Using Workload Identity (GKE)
+
+For GKE deployments, use Workload Identity instead of service account keys:
+
+```bash
+# .env - No credential file needed
+STORAGE_TYPE=gcs
+GOOGLE_CLOUD_STORAGE_BUCKET_NAME=my-flowise-bucket
+GOOGLE_CLOUD_STORAGE_PROJ_ID=my-gcp-project
+# Workload Identity provides credentials automatically
+```
+
+## S3-Compatible Storage
+
+Flowise works with S3-compatible storage services.
+
+### MinIO
+
+```bash
+STORAGE_TYPE=s3
+S3_STORAGE_BUCKET_NAME=flowise
+S3_STORAGE_ACCESS_KEY_ID=minioadmin
+S3_STORAGE_SECRET_ACCESS_KEY=minioadmin
+S3_ENDPOINT_URL=http://localhost:9000
+S3_FORCE_PATH_STYLE=true
+S3_STORAGE_REGION=us-east-1  # Required but can be any value
+```
+
+### DigitalOcean Spaces
+
+```bash
+STORAGE_TYPE=s3
+S3_STORAGE_BUCKET_NAME=my-flowise-space
+S3_STORAGE_ACCESS_KEY_ID=your_spaces_key
+S3_STORAGE_SECRET_ACCESS_KEY=your_spaces_secret
+S3_ENDPOINT_URL=https://nyc3.digitaloceanspaces.com
+S3_STORAGE_REGION=nyc3
+```
+
+### Cloudflare R2
+
+```bash
+STORAGE_TYPE=s3
+S3_STORAGE_BUCKET_NAME=my-flowise-bucket
+S3_STORAGE_ACCESS_KEY_ID=your_r2_key_id
+S3_STORAGE_SECRET_ACCESS_KEY=your_r2_secret
+S3_ENDPOINT_URL=https://account_id.r2.cloudflarestorage.com
+S3_FORCE_PATH_STYLE=false
+S3_STORAGE_REGION=auto
+```
+
+### Backblaze B2
+
+```bash
+STORAGE_TYPE=s3
+S3_STORAGE_BUCKET_NAME=my-flowise-bucket
+S3_STORAGE_ACCESS_KEY_ID=your_b2_key_id
+S3_STORAGE_SECRET_ACCESS_KEY=your_b2_application_key
+S3_ENDPOINT_URL=https://s3.us-west-002.backblazeb2.com
+S3_STORAGE_REGION=us-west-002
+```
+
+## File Upload Configuration
+
+<ParamField path="FLOWISE_FILE_SIZE_LIMIT" type="string" default="50mb">
+  Maximum file upload size for all file uploads
+  
+  ```bash
+  # Increase for larger files
+  FLOWISE_FILE_SIZE_LIMIT=100mb
+  ```
+</ParamField>
+
+### Supported File Types
+
+Flowise supports various file types based on document loaders:
+
+- **Documents**: PDF, DOCX, TXT, CSV, JSON
+- **Images**: JPEG, PNG, GIF, WebP (for vision models)
+- **Audio**: MP3, WAV, M4A (for speech-to-text)
+- **Code**: JS, TS, PY, JAVA, etc.
+
+## Storage Usage (Enterprise)
+
+<Note>
+Storage quota management is available in Flowise Enterprise Edition.
+</Note>
+
+Enterprise deployments can track and limit storage usage per organization/workspace.
+
+## Migration Between Storage Types
+
+To migrate from one storage backend to another:
+
+### Local to S3/GCS
+
+1. **Export files from local storage**
+
+```bash
+# Create archive of storage directory
+tar -czf flowise-storage-backup.tar.gz ~/.flowise/storage/
+```
+
+2. **Upload to cloud storage**
+
+```bash
+# S3
+aws s3 sync ~/.flowise/storage/ s3://my-flowise-bucket/ --region us-east-1
+
+# GCS
+gsutil -m rsync -r ~/.flowise/storage/ gs://my-flowise-bucket/
+```
+
+3. **Update configuration**
+
+```bash
+# Update .env to use S3/GCS
+STORAGE_TYPE=s3
+S3_STORAGE_BUCKET_NAME=my-flowise-bucket
+# ... other S3 config
+```
+
+4. **Restart Flowise**
+
+```bash
+npm start
+```
+
+## Troubleshooting
+
+### S3 Access Denied
+
+**Problem**: Cannot upload files to S3
+
+**Solutions**:
+- Verify IAM permissions include `s3:PutObject`
+- Check bucket name is correct
+- Ensure credentials are valid
+- Test with AWS CLI:
+
+```bash
+aws s3 cp test.txt s3://my-flowise-bucket/ --region us-east-1
+```
+
+### GCS Authentication Failed
+
+**Problem**: Cannot access GCS bucket
+
+**Solutions**:
+- Verify service account key file path is correct
+- Check service account has Storage Object Admin role
+- Ensure project ID is correct
+- Test with gsutil:
+
+```bash
+GOOGLE_APPLICATION_CREDENTIALS=/path/to/key.json gsutil ls gs://my-flowise-bucket
+```
+
+### CORS Errors
+
+**Problem**: File uploads fail from browser with CORS error
+
+**Solutions**:
+- Configure CORS on S3/GCS bucket (see setup steps above)
+- Verify allowed origins match your Flowise domain
+- Check browser console for specific CORS error
+
+### File Size Limit Exceeded
+
+**Problem**: Large file uploads fail
+
+**Solutions**:
+- Increase `FLOWISE_FILE_SIZE_LIMIT`
+- For S3, check bucket quota limits
+- For GCS, verify project quotas
+
+## Security Best Practices
+
+### 1. Use Private Buckets
+
+Never make storage buckets publicly accessible:
+
+```bash
+# S3 - Block all public access
+aws s3api put-public-access-block \
+  --bucket my-flowise-bucket \
+  --public-access-block-configuration \
+  "BlockPublicAcls=true,IgnorePublicAcls=true,BlockPublicPolicy=true,RestrictPublicBuckets=true"
+```
+
+### 2. Use IAM Roles (AWS) or Workload Identity (GCP)
+
+Avoid hardcoding credentials:
+
+```bash
+# Preferred: Use IAM role (no credentials in .env)
+STORAGE_TYPE=s3
+S3_STORAGE_BUCKET_NAME=my-flowise-bucket
+S3_STORAGE_REGION=us-east-1
+```
+
+### 3. Enable Encryption at Rest
+
+```bash
+# S3 - Enable default encryption
+aws s3api put-bucket-encryption \
+  --bucket my-flowise-bucket \
+  --server-side-encryption-configuration '{
+    "Rules": [{
+      "ApplyServerSideEncryptionByDefault": {
+        "SSEAlgorithm": "AES256"
+      }
+    }]
+  }'
+```
+
+### 4. Implement Lifecycle Policies
+
+Automatically delete old files:
+
+```json
+{
+  "Rules": [
+    {
+      "Id": "DeleteOldUploads",
+      "Filter": {"Prefix": "uploads/"},
+      "Status": "Enabled",
+      "Expiration": {"Days": 90}
+    }
+  ]
+}
+```
+
+### 5. Monitor Storage Costs
+
+- Enable S3/GCS cost tracking
+- Set up billing alerts
+- Implement file cleanup policies
+- Use lifecycle rules to transition to cheaper storage tiers
+
+## Example Production Configuration
+
+### AWS S3 (Recommended)
+
+```bash
+# Production S3 Configuration with IAM Role
+STORAGE_TYPE=s3
+S3_STORAGE_BUCKET_NAME=flowise-prod-us-east-1
+S3_STORAGE_REGION=us-east-1
+# IAM role provides credentials automatically
+
+# File size limit
+FLOWISE_FILE_SIZE_LIMIT=100mb
+```
+
+### Google Cloud Storage
+
+```bash
+# Production GCS Configuration with Workload Identity
+STORAGE_TYPE=gcs
+GOOGLE_CLOUD_STORAGE_BUCKET_NAME=flowise-prod-bucket
+GOOGLE_CLOUD_STORAGE_PROJ_ID=my-production-project
+GOOGLE_CLOUD_UNIFORM_BUCKET_ACCESS=true
+# Workload Identity provides credentials
+
+# File size limit  
+FLOWISE_FILE_SIZE_LIMIT=100mb
+```

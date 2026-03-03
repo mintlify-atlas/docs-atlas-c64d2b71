@@ -1,0 +1,224 @@
+---
+title: 'Anthropic Claude'
+description: 'Integrate Anthropic Claude models including Claude 3.5 Sonnet with extended thinking capabilities'
+icon: 'robot'
+---
+
+## Overview
+
+Anthropic Claude integration provides access to Claude 3.5 Sonnet, Claude 3 Opus, Haiku, and other models through the Messages API. Supports advanced features like extended thinking, tool use, and vision.
+
+## Setup
+
+<Steps>
+  <Step title="Get API Key">
+    Sign up at [Anthropic Console](https://console.anthropic.com) and create an API key
+  </Step>
+  
+  <Step title="Add Credential">
+    In Flowise, go to **Credentials** and create a new Anthropic API credential
+  </Step>
+  
+  <Step title="Add to Canvas">
+    Drag the **ChatAnthropic** node from the Chat Models category to your canvas
+  </Step>
+</Steps>
+
+## Configuration
+
+### Basic Parameters
+
+<ParamField path="credential" type="credential" required>
+  Your Anthropic API credential containing the API key
+</ParamField>
+
+<ParamField path="modelName" type="string" default="claude-3-haiku">
+  The Claude model to use:
+  - `claude-3-5-sonnet-latest` - Most capable model
+  - `claude-3-5-haiku-latest` - Fast and cost-effective
+  - `claude-3-opus-latest` - Previous generation flagship
+  - `claude-3-sonnet` - Balanced performance
+  - `claude-3-haiku` - Fastest responses
+</ParamField>
+
+<ParamField path="temperature" type="number" default={0.9}>
+  Controls randomness in responses (0.0 to 1.0). Lower = more focused, higher = more creative
+</ParamField>
+
+<ParamField path="streaming" type="boolean" default={true}>
+  Enable streaming for real-time response generation
+</ParamField>
+
+### Advanced Parameters
+
+<ParamField path="maxTokensToSample" type="number">
+  Maximum number of tokens to generate. Claude supports up to 4096 output tokens
+</ParamField>
+
+<ParamField path="topP" type="number">
+  Nucleus sampling threshold (0.0 to 1.0). Use this OR temperature, not both
+</ParamField>
+
+<ParamField path="topK" type="number">
+  Sample from the top K options for each token. Reduces variety of responses
+</ParamField>
+
+### Extended Thinking (Reasoning)
+
+<Note>
+Extended thinking is available for Claude 3.5 Sonnet and Claude 4 models, enabling deeper reasoning capabilities.
+</Note>
+
+<ParamField path="extendedThinking" type="boolean" default={false}>
+  Enable extended thinking mode for reasoning-intensive tasks
+</ParamField>
+
+<ParamField path="budgetTokens" type="number" default={1024}>
+  Maximum tokens Claude can use for internal reasoning process (1-10000)
+</ParamField>
+
+### Vision Support
+
+<ParamField path="allowImageUploads" type="boolean" default={false}>
+  Enable image analysis for vision-capable Claude models
+</ParamField>
+
+## Usage Examples
+
+### Basic Configuration
+
+```typescript
+// Standard chat configuration
+Model Name: claude-3-5-sonnet-latest
+Temperature: 0.7
+Max Tokens: 2048
+Streaming: true
+```
+
+### Extended Thinking Mode
+
+```typescript
+// For complex reasoning tasks
+Model Name: claude-3-5-sonnet-latest
+Extended Thinking: true
+Budget Tokens: 4096
+Temperature: 0.3  // Lower for more focused reasoning
+```
+
+### Vision-Enabled Chat
+
+```typescript
+// Analyze images
+Model Name: claude-3-5-sonnet-latest
+Allow Image Uploads: true
+Max Tokens: 2048
+```
+
+### Tool Use Agent
+
+```typescript
+// Optimal settings for function calling
+Model Name: claude-3-5-sonnet-latest
+Temperature: 0.1
+Top K: 1
+Max Tokens: 4096
+```
+
+## Extended Thinking Deep Dive
+
+When extended thinking is enabled, Claude uses a separate "thinking" process before generating the final response.
+
+<CodeGroup>
+```typescript Example Response Structure
+{
+  "thinking": {
+    "process": "Internal reasoning steps...",
+    "tokens_used": 512
+  },
+  "response": "Final answer based on thinking..."
+}
+```
+</CodeGroup>
+
+**Budget Tokens Guidelines:**
+- **1024-2048**: Quick reasoning tasks
+- **2048-4096**: Moderate complexity problems
+- **4096-8192**: Complex analysis and planning
+- **8192+**: Advanced research and multi-step reasoning
+
+<Note>
+Extended thinking tokens count against your total API usage but provide transparency into Claude's reasoning process.
+</Note>
+
+## Best Practices
+
+<CardGroup cols={2}>
+  <Card title="Model Selection" icon="brain">
+    - Use **Sonnet 3.5** for most production workloads
+    - Use **Haiku 3.5** for high-volume, simple tasks
+    - Use **Opus** when you need maximum capability
+  </Card>
+  
+  <Card title="Extended Thinking" icon="lightbulb">
+    - Enable for math, coding, and analysis
+    - Set budget tokens based on task complexity
+    - Monitor token usage in responses
+  </Card>
+  
+  <Card title="Performance" icon="rocket">
+    - Enable streaming for better UX
+    - Use appropriate max tokens
+    - Consider caching for repeated queries
+  </Card>
+  
+  <Card title="Cost Optimization" icon="dollar-sign">
+    - Start with Haiku for testing
+    - Use Sonnet for production
+    - Monitor extended thinking token usage
+  </Card>
+</CardGroup>
+
+## Claude vs GPT Comparison
+
+| Feature | Claude 3.5 Sonnet | GPT-4o |
+|---------|-------------------|--------|
+| Context Window | 200K tokens | 128K tokens |
+| Output Tokens | 4K-8K | 4K-16K |
+| Extended Thinking | Yes | Reasoning (o1 models) |
+| Vision | Yes | Yes |
+| Tool Use | Yes | Function Calling |
+| Best For | Analysis, writing | Creative tasks, coding |
+
+## Common Issues
+
+<AccordionGroup>
+  <Accordion title="Rate Limiting">
+    Anthropic has different rate limits per tier:
+    - **Free tier**: 5 requests/minute
+    - **Build tier**: 50 requests/minute
+    - **Scale tier**: Custom limits
+    
+    Solution: Implement exponential backoff and monitor usage
+  </Accordion>
+  
+  <Accordion title="Extended Thinking Not Available">
+    Extended thinking requires:
+    - Claude 3.5 Sonnet or Claude 4
+    - Extended thinking parameter enabled
+    - Sufficient budget tokens allocated
+  </Accordion>
+  
+  <Accordion title="Context Window Exceeded">
+    Claude supports large contexts but has limits:
+    - Monitor conversation length
+    - Implement summarization for long chats
+    - Use appropriate models (200K context)
+  </Accordion>
+</AccordionGroup>
+
+## Related Resources
+
+- [Anthropic Documentation](https://docs.anthropic.com)
+- [Claude Model Comparison](https://www.anthropic.com/claude)
+- [Extended Thinking Guide](https://docs.anthropic.com/claude/docs/extended-thinking)
+- [Tool Use Documentation](https://docs.anthropic.com/claude/docs/tool-use)

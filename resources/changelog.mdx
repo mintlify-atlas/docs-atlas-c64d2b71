@@ -1,0 +1,226 @@
+---
+title: Changelog
+description: Track updates, new features, and bug fixes in Flowise releases
+---
+
+Stay up to date with the latest changes, improvements, and bug fixes in Flowise. For detailed release notes, visit the [GitHub Releases page](https://github.com/FlowiseAI/Flowise/releases).
+
+## Current Version
+
+<Note>
+**Latest Release**: v3.0.13
+
+Flowise is actively developed with regular updates. Star the [GitHub repository](https://github.com/FlowiseAI/Flowise) to get notified of new releases.
+</Note>
+
+## Getting Updates
+
+### NPM Installation
+
+Update to the latest version:
+
+```bash
+npm update -g flowise
+npx flowise start
+```
+
+### Docker
+
+Pull the latest image:
+
+```bash
+docker pull flowiseai/flowise:latest
+docker stop flowise
+docker rm flowise
+docker run -d -p 3000:3000 --name flowise flowiseai/flowise
+```
+
+### From Source
+
+Update your local repository:
+
+```bash
+cd Flowise
+git pull origin main
+pnpm install
+pnpm build
+pnpm start
+```
+
+## Release Channels
+
+<CardGroup cols={2}>
+  <Card title="Stable Releases" icon="check-circle">
+    Production-ready releases with thorough testing. Recommended for most users.
+  </Card>
+  
+  <Card title="Main Branch" icon="code-branch">
+    Latest development code with new features. May contain bugs.
+  </Card>
+</CardGroup>
+
+## Version History
+
+For detailed changelogs of each release, including:
+- New features and enhancements
+- Bug fixes
+- Breaking changes
+- Security updates
+- Performance improvements
+
+Visit the [GitHub Releases page](https://github.com/FlowiseAI/Flowise/releases).
+
+## Breaking Changes
+
+<Warning>
+Before upgrading to a new major version, review the release notes for breaking changes that may affect your chatflows or deployment.
+</Warning>
+
+Major version updates may include:
+- Database schema changes
+- API changes
+- Component interface updates
+- Configuration changes
+- Dependency updates
+
+Refer to [Migration Guides](/resources/migration-guides) for upgrade instructions.
+
+## Subscribe to Updates
+
+Stay informed about new releases:
+
+<Steps>
+  <Step title="Watch on GitHub">
+    Go to the [Flowise repository](https://github.com/FlowiseAI/Flowise) and click "Watch" → "Custom" → "Releases"
+  </Step>
+  
+  <Step title="Follow on Twitter">
+    Follow [@FlowiseAI](https://twitter.com/FlowiseAI) for release announcements
+  </Step>
+  
+  <Step title="Join Discord">
+    Join the [Discord server](https://discord.gg/jbaHfsRVBW) for announcements and discussions
+  </Step>
+  
+  <Step title="RSS Feed">
+    Subscribe to the [GitHub releases RSS feed](https://github.com/FlowiseAI/Flowise/releases.atom)
+  </Step>
+</Steps>
+
+## Release Notes Format
+
+Release notes typically include:
+
+### New Features
+New capabilities, components, and integrations added to Flowise.
+
+### Enhancements
+Improvements to existing features, performance optimizations, and UX enhancements.
+
+### Bug Fixes
+Resolved issues and bugs reported by the community.
+
+### Security Updates
+Security patches and vulnerability fixes.
+
+### Breaking Changes
+Changes that may require updates to your chatflows or configuration.
+
+### Dependencies
+Updates to third-party packages and libraries.
+
+## Contributing to Releases
+
+Help improve Flowise releases:
+
+<CardGroup cols={2}>
+  <Card title="Report Bugs" icon="bug" href="https://github.com/FlowiseAI/Flowise/issues/new/choose">
+    Report issues to be fixed in upcoming releases
+  </Card>
+  
+  <Card title="Request Features" icon="lightbulb" href="https://github.com/FlowiseAI/Flowise/discussions/categories/ideas">
+    Suggest new features for future versions
+  </Card>
+  
+  <Card title="Submit PRs" icon="code-pull-request" href="/resources/contributing">
+    Contribute code that gets included in releases
+  </Card>
+  
+  <Card title="Test Pre-releases" icon="flask">
+    Help test beta versions and release candidates
+  </Card>
+</CardGroup>
+
+## Release Schedule
+
+Flowise follows a continuous release model:
+
+- **Patch releases** (3.0.x): Bug fixes and minor updates - Released as needed
+- **Minor releases** (3.x.0): New features and enhancements - Regular schedule
+- **Major releases** (x.0.0): Significant changes and breaking updates - When necessary
+
+<Note>
+Release frequency may vary based on bug severity, feature readiness, and community needs.
+</Note>
+
+## Deprecation Policy
+
+When features are deprecated:
+
+1. **Announcement**: Deprecation is announced in release notes
+2. **Warning Period**: Feature remains with deprecation warnings
+3. **Removal**: Feature is removed in next major version
+4. **Migration Path**: Documentation provided for alternatives
+
+## Version Support
+
+<AccordionGroup>
+  <Accordion title="Latest Version">
+    The most recent release receives:
+    - Active development
+    - Bug fixes
+    - Security updates
+    - Feature enhancements
+    - Full community support
+  </Accordion>
+  
+  <Accordion title="Previous Minor Versions">
+    The last 2-3 minor versions may receive:
+    - Critical bug fixes
+    - Security patches
+    - Limited support
+  </Accordion>
+  
+  <Accordion title="Older Versions">
+    Older versions:
+    - No active support
+    - No updates
+    - Upgrade recommended
+  </Accordion>
+</AccordionGroup>
+
+## Star History
+
+Track Flowise's growth and popularity:
+
+[![Star History Chart](https://api.star-history.com/svg?repos=FlowiseAI/Flowise&type=Timeline)](https://star-history.com/#FlowiseAI/Flowise&Date)
+
+## Resources
+
+<CardGroup cols={2}>
+  <Card title="GitHub Releases" icon="github" href="https://github.com/FlowiseAI/Flowise/releases">
+    View all releases and detailed changelogs
+  </Card>
+  
+  <Card title="Migration Guides" icon="route" href="/resources/migration-guides">
+    Upgrade instructions for major versions
+  </Card>
+  
+  <Card title="Community" icon="users" href="/resources/community">
+    Discuss releases with the community
+  </Card>
+  
+  <Card title="Contributing" icon="code" href="/resources/contributing">
+    Help shape future releases
+  </Card>
+</CardGroup>

@@ -1,0 +1,217 @@
+---
+title: Contributing to Flowise
+description: Learn how to contribute to the Flowise project through code, documentation, and community engagement
+---
+
+We appreciate any form of contributions to Flowise. Whether you're fixing bugs, adding features, or sharing your chatflows, your contributions help make Flowise better for everyone.
+
+## Ways to Contribute
+
+### Star the Repository
+
+Star and share the [GitHub Repository](https://github.com/FlowiseAI/Flowise) to help increase visibility and support the project.
+
+### Ask Questions
+
+Search for questions in the [Q&A section](https://github.com/FlowiseAI/Flowise/discussions/categories/q-a). If you can't find an answer, create a new discussion. Your question might help others with similar issues.
+
+### Share Your Chatflows
+
+Export your chatflow as JSON, attach a screenshot, and share it in the [Show and Tell section](https://github.com/FlowiseAI/Flowise/discussions/categories/show-and-tell).
+
+### Submit Ideas
+
+Have ideas for new features, app integrations, or improvements? Submit them in the [Ideas section](https://github.com/FlowiseAI/Flowise/discussions/categories/ideas).
+
+### Report Bugs
+
+Found an issue? [Report it on GitHub](https://github.com/FlowiseAI/Flowise/issues/new/choose) with detailed information to help us reproduce and fix it.
+
+## Contributing Code
+
+### What to Contribute
+
+Not sure where to start? Here are some ideas:
+
+- Create new components in `packages/components`
+- Update existing components with new functionality or bug fixes
+- Add new chatflow templates and examples
+- Improve documentation
+
+### Project Structure
+
+Flowise is organized as a monorepo with three main modules:
+
+<CardGroup cols={3}>
+  <Card title="Server" icon="server">
+    Node.js backend serving API logic
+  </Card>
+  <Card title="UI" icon="browser">
+    React frontend application
+  </Card>
+  <Card title="Components" icon="puzzle-piece">
+    Third-party node integrations
+  </Card>
+</CardGroup>
+
+### Development Setup
+
+<Steps>
+  <Step title="Prerequisites">
+    Install [PNPM](https://pnpm.io/installation) version 10:
+    
+    ```bash
+    npm i -g pnpm
+    ```
+  </Step>
+
+  <Step title="Fork and Clone">
+    1. Fork the [Flowise repository](https://github.com/FlowiseAI/Flowise)
+    2. Clone your forked repository:
+    
+    ```bash
+    git clone https://github.com/YOUR_USERNAME/Flowise.git
+    cd Flowise
+    ```
+  </Step>
+
+  <Step title="Create a Branch">
+    Create a new branch following the naming conventions:
+    
+    <Tabs>
+      <Tab title="Feature Branch">
+        ```bash
+        git checkout -b feature/your-new-feature
+        ```
+      </Tab>
+      <Tab title="Bugfix Branch">
+        ```bash
+        git checkout -b bugfix/your-bugfix
+        ```
+      </Tab>
+    </Tabs>
+  </Step>
+
+  <Step title="Install Dependencies">
+    ```bash
+    pnpm install
+    ```
+  </Step>
+
+  <Step title="Build the Code">
+    ```bash
+    pnpm build
+    ```
+    
+    <Note>
+      If you encounter "JavaScript heap out of memory" errors, increase Node.js heap size:
+      
+      ```bash
+      # macOS / Linux / Git Bash
+      export NODE_OPTIONS="--max-old-space-size=4096"
+      
+      # Windows PowerShell
+      $env:NODE_OPTIONS="--max-old-space-size=4096"
+      ```
+    </Note>
+  </Step>
+
+  <Step title="Start Development">
+    For production mode:
+    ```bash
+    pnpm start
+    ```
+    Access the app at [http://localhost:3000](http://localhost:3000)
+    
+    For development mode with hot reload:
+    
+    1. Create `.env` file in `packages/ui` (refer to `.env.example`)
+    2. Create `.env` file in `packages/server` (refer to `.env.example`)
+    3. Run:
+    ```bash
+    pnpm dev
+    ```
+    
+    Access the app at [http://localhost:8080](http://localhost:8080)
+    
+    <Note>
+      Changes in `packages/ui` and `packages/server` will reload automatically. For changes in `packages/components`, run `pnpm build` again.
+    </Note>
+  </Step>
+
+  <Step title="Test Your Changes">
+    Before submitting, ensure everything works in production:
+    
+    ```bash
+    pnpm build
+    pnpm start
+    ```
+  </Step>
+
+  <Step title="Submit Pull Request">
+    Commit your changes and submit a pull request from your branch to [Flowise main](https://github.com/FlowiseAI/Flowise/tree/main).
+  </Step>
+</Steps>
+
+## Environment Variables
+
+Flowise supports various environment variables for configuration. Specify them in the `.env` file inside `packages/server` folder.
+
+<Note>
+For a complete list of environment variables, see the [Environment Variables documentation](/configuration/environment-variables).
+</Note>
+
+## Contributing to Documentation
+
+Documentation contributions are managed in the [Flowise Docs repository](https://github.com/FlowiseAI/FlowiseDocs).
+
+## Pull Request Process
+
+<Steps>
+  <Step title="Review">
+    A FlowiseAI team member will be automatically notified when you open a pull request.
+  </Step>
+  
+  <Step title="Discussion">
+    The team may request changes or ask questions about your contribution.
+  </Step>
+  
+  <Step title="Merge">
+    Once approved, your pull request will be merged into the main branch.
+  </Step>
+</Steps>
+
+<Note>
+Need help with your pull request? Reach out on [Discord](https://discord.gg/jbaHfsRVBW).
+</Note>
+
+## Code of Conduct
+
+This project follows the Contributor Covenant Code of Conduct. By participating, you agree to uphold this code. Report unacceptable behavior to hello@flowiseai.com.
+
+### Our Standards
+
+**Positive behaviors include:**
+- Using welcoming and inclusive language
+- Being respectful of differing viewpoints and experiences
+- Gracefully accepting constructive criticism
+- Focusing on what's best for the community
+- Showing empathy towards other community members
+
+**Unacceptable behaviors include:**
+- Sexualized language or imagery and unwelcome sexual attention
+- Trolling, insulting/derogatory comments, and personal or political attacks
+- Public or private harassment
+- Publishing others' private information without permission
+- Other conduct inappropriate in a professional setting
+
+## Get Help
+
+<CardGroup cols={2}>
+  <Card title="Discord Community" icon="discord" href="https://discord.gg/jbaHfsRVBW">
+    Join our Discord server for real-time help and discussions
+  </Card>
+  <Card title="GitHub Discussions" icon="github" href="https://github.com/FlowiseAI/Flowise/discussions">
+    Browse or start discussions on GitHub
+  </Card>
+</CardGroup>

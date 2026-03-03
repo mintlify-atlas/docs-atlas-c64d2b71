@@ -1,80 +1,133 @@
 ---
-title: "Quickstart"
-description: "Start building awesome documentation in minutes"
+title: Quickstart
+description: Get your first Flowise chatflow running in under 5 minutes
 ---
 
-## Get started in three steps
+## Get Started in Minutes
 
-Get your documentation site running locally and make your first customization.
-
-### Step 1: Set up your local environment
-
-<AccordionGroup>
-  <Accordion icon="copy" title="Clone your docs locally">
-    During the onboarding process, you created a GitHub repository with your docs content if you didn't already have one. You can find a link to this repository in your [dashboard](https://dashboard.mintlify.com).
-    
-    To clone the repository locally so that you can make and preview changes to your docs, follow the [Cloning a repository](https://docs.github.com/en/repositories/creating-and-managing-repositories/cloning-a-repository) guide in the GitHub docs.
-  </Accordion>
-  <Accordion icon="rectangle-terminal" title="Start the preview server">
-    1. Install the Mintlify CLI: `npm i -g mint`
-    2. Navigate to your docs directory and run: `mint dev`
-    3. Open `http://localhost:3000` to see your docs live!
-    
-    <Tip>Your preview updates automatically as you edit files.</Tip>
-  </Accordion>
-</AccordionGroup>
-
-### Step 2: Deploy your changes
-
-<AccordionGroup>
-  <Accordion icon="github" title="Install our GitHub app">
-    Install the Mintlify GitHub app from your [dashboard](https://dashboard.mintlify.com/settings/organization/github-app).
-    
-    Our GitHub app automatically deploys your changes to your docs site, so you don't need to manage deployments yourself.
-</Accordion>
-<Accordion icon="palette" title="Update your site name and colors">
-    For a first change, let's update the name and colors of your docs site.
-
-    1. Open `docs.json` in your editor.
-    2. Change the `"name"` field to your project name.
-    3. Update the `"colors"` to match your brand.
-    4. Save and see your changes instantly at `http://localhost:3000`.
-
-    <Tip>Try changing the primary color to see an immediate difference!</Tip>
-  </Accordion>
-</AccordionGroup>
-
-### Step 3: Go live
-
-<Accordion icon="rocket" title="Publish your docs">
-  1. Commit and push your changes.
-  2. Your docs will update and be live in moments!
-</Accordion>
-
-## Next steps
-
-Now that you have your docs running, explore these key features:
-
-<CardGroup cols={2}>
-
-<Card title="Write Content" icon="pen-to-square" href="/essentials/markdown">
-  Learn MDX syntax and start writing your documentation.
-</Card>
-
-<Card title="Customize style" icon="palette" href="/essentials/settings">
-  Make your docs match your brand perfectly.
-</Card>
-
-<Card title="Add code examples" icon="square-code" href="/essentials/code">
-  Include syntax-highlighted code blocks.
-</Card>
-
-<Card title="API documentation" icon="code" href="/api-reference/introduction">
-  Auto-generate API docs from OpenAPI specs.
-</Card>
-
-</CardGroup>
+This guide will help you install Flowise and create your first working chatflow quickly.
 
 <Note>
-  **Need help?** See our [full documentation](https://mintlify.com/docs) or join our [community](https://mintlify.com/community).
+  **Prerequisites**: Ensure you have [Node.js](https://nodejs.org/en/download) version 18.15.0 or higher installed.
 </Note>
+
+<Steps>
+  <Step title="Install Flowise">
+    Install Flowise globally using npm:
+
+    ```bash
+    npm install -g flowise
+    ```
+
+    This command installs Flowise as a global package, making it available from anywhere on your system.
+  </Step>
+
+  <Step title="Start Flowise">
+    Launch the Flowise application:
+
+    ```bash
+    npx flowise start
+    ```
+
+    <Tip>
+      The server will start on port 3000 by default. You can customize this and other settings using [environment variables](/configuration/environment-variables).
+    </Tip>
+  </Step>
+
+  <Step title="Access the Interface">
+    Open your browser and navigate to:
+
+    ```
+    http://localhost:3000
+    ```
+
+    You should see the Flowise visual builder interface.
+  </Step>
+
+  <Step title="Create Your First Chatflow">
+    Now let's build a simple chatflow:
+
+    1. Click on **"Add New"** to create a new chatflow
+    2. From the nodes panel, drag and drop:
+       - A **Chat Model** node (e.g., ChatOpenAI)
+       - A **Conversation Chain** node
+    3. Connect the nodes by dragging from one node's output to another's input
+    4. Configure your LLM API key in the Chat Model node settings
+    5. Click **"Save"** to save your chatflow
+    6. Click the **"Chat"** button to test your chatflow
+
+    <Tip>
+      Don't have an API key? You can get one from [OpenAI's platform](https://platform.openai.com/api-keys).
+    </Tip>
+  </Step>
+
+  <Step title="Test Your Chatflow">
+    In the chat interface:
+
+    1. Type a message like "Hello, who are you?"
+    2. Press Enter to send
+    3. Watch your AI agent respond!
+
+    Congratulations! You've created your first Flowise chatflow.
+  </Step>
+</Steps>
+
+## What's Next?
+
+<CardGroup cols={2}>
+  <Card title="Explore Components" icon="puzzle-piece">
+    Discover the wide range of LLMs, tools, vector stores, and other components available in Flowise.
+  </Card>
+  <Card title="Build an Agent" icon="robot">
+    Learn how to create more sophisticated AI agents that can use tools and reasoning.
+  </Card>
+  <Card title="Configure Your Instance" icon="sliders" href="/configuration/environment-variables">
+    Customize Flowise with environment variables for database, authentication, and more.
+  </Card>
+  <Card title="Deploy to Production" icon="rocket" href="/deployment/overview">
+    Deploy your Flowise instance to AWS, Azure, GCP, or other platforms.
+  </Card>
+</CardGroup>
+
+## Troubleshooting
+
+<AccordionGroup>
+  <Accordion title="Port 3000 is already in use">
+    If port 3000 is occupied, you can specify a different port using the `PORT` environment variable:
+
+    ```bash
+    PORT=3001 npx flowise start
+    ```
+  </Accordion>
+
+  <Accordion title="Node.js version errors">
+    Flowise requires Node.js >= 18.15.0. Check your version:
+
+    ```bash
+    node --version
+    ```
+
+    If your version is lower, download and install the latest LTS version from [nodejs.org](https://nodejs.org/).
+  </Accordion>
+
+  <Accordion title="Installation fails or hangs">
+    Try clearing your npm cache and reinstalling:
+
+    ```bash
+    npm cache clean --force
+    npm install -g flowise
+    ```
+  </Accordion>
+</AccordionGroup>
+
+## Alternative: Docker Quickstart
+
+Prefer Docker? You can also run Flowise with Docker:
+
+```bash
+docker run -d --name flowise -p 3000:3000 flowiseai/flowise:latest
+```
+
+Then access Flowise at `http://localhost:3000`.
+
+For more Docker options, see the [Installation Guide](/installation#docker).

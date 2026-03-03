@@ -1,0 +1,234 @@
+---
+title: 'OpenAI'
+description: 'Integrate OpenAI GPT models including GPT-4, GPT-4 Turbo, and GPT-3.5 with function calling support'
+icon: 'openai'
+---
+
+## Overview
+
+The OpenAI integration provides access to ChatGPT models through the Chat completion endpoint. Supports all GPT models including GPT-4, GPT-4 Turbo, GPT-3.5 Turbo, and the latest o1 reasoning models.
+
+## Setup
+
+<Steps>
+  <Step title="Get API Key">
+    Sign up at [OpenAI Platform](https://platform.openai.com) and generate an API key from the API keys section
+  </Step>
+  
+  <Step title="Add Credential">
+    In Flowise, navigate to **Credentials** and create a new OpenAI API credential with your key
+  </Step>
+  
+  <Step title="Add to Canvas">
+    Drag the **ChatOpenAI** node from the Chat Models category to your canvas
+  </Step>
+</Steps>
+
+## Configuration
+
+### Basic Parameters
+
+<ParamField path="credential" type="credential" required>
+  Your OpenAI API credential containing the API key
+</ParamField>
+
+<ParamField path="modelName" type="string" default="gpt-4o-mini">
+  The model to use. Available models are loaded dynamically from your account.
+  
+  Popular options:
+  - `gpt-4o` - Latest GPT-4 Omni model
+  - `gpt-4o-mini` - Faster, cost-effective GPT-4 variant
+  - `gpt-4-turbo` - GPT-4 Turbo with vision
+  - `gpt-3.5-turbo` - Fast and economical
+  - `o1-preview` - Advanced reasoning model
+</ParamField>
+
+<ParamField path="temperature" type="number" default={0.9}>
+  Controls randomness. Lower values (0.1) make output more deterministic, higher values (0.9) more creative
+</ParamField>
+
+<ParamField path="streaming" type="boolean" default={true}>
+  Enable streaming responses for real-time output
+</ParamField>
+
+### Advanced Parameters
+
+<ParamField path="maxTokens" type="number">
+  Maximum number of tokens to generate in the response
+</ParamField>
+
+<ParamField path="topP" type="number">
+  Nucleus sampling parameter. Alternative to temperature for controlling randomness
+</ParamField>
+
+<ParamField path="frequencyPenalty" type="number">
+  Penalize new tokens based on their frequency in the text so far (-2.0 to 2.0)
+</ParamField>
+
+<ParamField path="presencePenalty" type="number">
+  Penalize new tokens based on whether they appear in the text so far (-2.0 to 2.0)
+</ParamField>
+
+<ParamField path="stopSequence" type="string">
+  List of sequences where the API will stop generating. Separate multiple with commas
+</ParamField>
+
+<ParamField path="timeout" type="number">
+  Request timeout in milliseconds
+</ParamField>
+
+<ParamField path="strictToolCalling" type="boolean">
+  Enable strict mode for function calling to ensure JSON schema compliance
+</ParamField>
+
+### Vision Support
+
+<ParamField path="allowImageUploads" type="boolean" default={false}>
+  Enable image input for vision-capable models like GPT-4 Turbo and GPT-4o
+</ParamField>
+
+<ParamField path="imageResolution" type="string" default="low">
+  Control image resolution for vision models:
+  - `low` - Faster, lower cost
+  - `high` - Better detail recognition
+  - `auto` - Let the model decide
+</ParamField>
+
+### Reasoning Models (o1, o3)
+
+<Note>
+Reasoning models like o1-preview and o3-mini have special parameters and don't support temperature or stop sequences.
+</Note>
+
+<ParamField path="reasoning" type="boolean" default={false}>
+  Enable reasoning mode for o1/o3 models
+</ParamField>
+
+<ParamField path="reasoningEffort" type="string">
+  Constrain reasoning effort:
+  - `low` - Faster responses
+  - `medium` - Balanced
+  - `high` - Most thorough reasoning
+</ParamField>
+
+<ParamField path="reasoningSummary" type="string">
+  Get a summary of the model's reasoning process:
+  - `auto` - Default behavior
+  - `concise` - Brief summary
+  - `detailed` - Full reasoning trace
+</ParamField>
+
+### Proxy & Custom Configuration
+
+<ParamField path="basePath" type="string">
+  Custom API base URL for OpenAI-compatible endpoints
+</ParamField>
+
+<ParamField path="proxyUrl" type="string">
+  HTTPS proxy URL for routing requests
+</ParamField>
+
+<ParamField path="baseOptions" type="json">
+  Custom headers and configuration as JSON
+</ParamField>
+
+## Usage Examples
+
+### Basic Chat Model
+
+```typescript
+// Configuration in Flowise UI
+Model Name: gpt-4o-mini
+Temperature: 0.7
+Max Tokens: 2000
+Streaming: true
+```
+
+### Function Calling Agent
+
+```typescript
+// Use with Tool Agent for function calling
+Model Name: gpt-4o
+Strict Tool Calling: true  // Ensures strict JSON schema
+Temperature: 0.1  // Lower for more reliable function calls
+```
+
+### Vision-Enabled Chat
+
+```typescript
+// Enable image analysis
+Model Name: gpt-4o
+Allow Image Uploads: true
+Image Resolution: high
+```
+
+### Reasoning Model
+
+```typescript
+// o1-preview configuration
+Model Name: o1-preview
+Reasoning: true
+Reasoning Effort: high
+Reasoning Summary: detailed
+// Note: Temperature and stop sequences are automatically disabled
+```
+
+## Best Practices
+
+<CardGroup cols={2}>
+  <Card title="Model Selection" icon="sliders">
+    - Use `gpt-4o-mini` for most tasks (cost-effective)
+    - Use `gpt-4o` for complex reasoning
+    - Use `o1-preview` for advanced problem-solving
+  </Card>
+  
+  <Card title="Cost Optimization" icon="dollar-sign">
+    - Enable caching to reduce repeated calls
+    - Set appropriate `maxTokens` limits
+    - Use `gpt-3.5-turbo` for simple tasks
+  </Card>
+  
+  <Card title="Function Calling" icon="code">
+    - Enable `strictToolCalling` for reliability
+    - Lower temperature (0.1-0.3) for tool use
+    - Provide clear function descriptions
+  </Card>
+  
+  <Card title="Performance" icon="gauge">
+    - Enable streaming for better UX
+    - Set reasonable timeout values
+    - Use appropriate reasoning effort
+  </Card>
+</CardGroup>
+
+## Common Issues
+
+<AccordionGroup>
+  <Accordion title="Rate Limit Errors">
+    OpenAI enforces rate limits based on your usage tier:
+    - Add retry logic with exponential backoff
+    - Monitor your usage in the OpenAI dashboard
+    - Consider upgrading your usage tier
+  </Accordion>
+  
+  <Accordion title="Context Length Exceeded">
+    If you exceed the model's context window:
+    - Reduce `maxTokens` parameter
+    - Implement conversation summarization
+    - Use a model with larger context (e.g., gpt-4-turbo-128k)
+  </Accordion>
+  
+  <Accordion title="Reasoning Models Not Working">
+    o1 and o3 models have different requirements:
+    - Don't set temperature (automatically disabled)
+    - Don't use stop sequences
+    - Enable reasoning parameter
+  </Accordion>
+</AccordionGroup>
+
+## Related Resources
+
+- [OpenAI Platform Documentation](https://platform.openai.com/docs)
+- [Model Pricing](https://openai.com/pricing)
+- [Function Calling Guide](/integrations/agents/overview)
+- [Vision Capabilities](https://platform.openai.com/docs/guides/vision)

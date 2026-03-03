@@ -1,0 +1,510 @@
+---
+title: Database Configuration
+description: Configure database connections for Flowise
+---
+
+Flowise supports multiple database systems including SQLite, PostgreSQL, MySQL, and MariaDB. This guide covers setup and configuration for each.
+
+## Supported Databases
+
+Flowise uses TypeORM and supports the following databases:
+
+- **SQLite** - Default, no configuration required
+- **PostgreSQL** - Recommended for production
+- **MySQL** - Fully supported
+- **MariaDB** - Fully supported
+
+## SQLite (Default)
+
+SQLite is used by default with zero configuration. Great for development and small deployments.
+
+```bash
+# Optional: customize database location
+DATABASE_TYPE=sqlite
+DATABASE_PATH=/path/to/flowise/data
+```
+
+<ParamField path="DATABASE_TYPE" type="string" default="sqlite">
+  Set to `sqlite` or leave unset for default SQLite database
+</ParamField>
+
+<ParamField path="DATABASE_PATH" type="string" default="~/.flowise">
+  Directory where `database.sqlite` file will be created
+</ParamField>
+
+### Default Location
+
+By default, SQLite database is stored at:
+- **Linux/macOS**: `~/.flowise/database.sqlite`
+- **Windows**: `C:\Users\{username}\.flowise\database.sqlite`
+
+<Note>
+SQLite is suitable for development and small deployments. For production environments with multiple instances or high traffic, use PostgreSQL.
+</Note>
+
+## PostgreSQL (Recommended for Production)
+
+PostgreSQL is the recommended database for production deployments.
+
+### Basic Configuration
+
+```bash
+# PostgreSQL Configuration
+DATABASE_TYPE=postgres
+DATABASE_HOST=localhost
+DATABASE_PORT=5432
+DATABASE_NAME=flowise
+DATABASE_USER=flowise_user
+DATABASE_PASSWORD=secure_password
+```
+
+<ParamField path="DATABASE_TYPE" type="string">
+  Set to `postgres` for PostgreSQL
+</ParamField>
+
+<ParamField path="DATABASE_HOST" type="string">
+  PostgreSQL server hostname or IP address (e.g., `localhost`, `db.example.com`)
+</ParamField>
+
+<ParamField path="DATABASE_PORT" type="number" default="5432">
+  PostgreSQL server port
+</ParamField>
+
+<ParamField path="DATABASE_NAME" type="string" default="flowise">
+  Name of the database to connect to
+</ParamField>
+
+<ParamField path="DATABASE_USER" type="string">
+  PostgreSQL username
+</ParamField>
+
+<ParamField path="DATABASE_PASSWORD" type="string">
+  PostgreSQL password
+</ParamField>
+
+### PostgreSQL Setup Steps
+
+1. **Create Database and User**
+
+```sql
+-- Connect to PostgreSQL as admin
+psql -U postgres
+
+-- Create database
+CREATE DATABASE flowise;
+
+-- Create user
+CREATE USER flowise_user WITH PASSWORD 'secure_password';
+
+-- Grant privileges
+GRANT ALL PRIVILEGES ON DATABASE flowise TO flowise_user;
+
+-- Exit
+\q
+```
+
+2. **Configure Flowise**
+
+Add to your `.env` file:
+
+```bash
+DATABASE_TYPE=postgres
+DATABASE_HOST=localhost
+DATABASE_PORT=5432
+DATABASE_NAME=flowise
+DATABASE_USER=flowise_user
+DATABASE_PASSWORD=secure_password
+```
+
+3. **Start Flowise**
+
+Flowise will automatically create tables on first startup.
+
+### PostgreSQL with SSL
+
+For secure connections to PostgreSQL:
+
+```bash
+DATABASE_TYPE=postgres
+DATABASE_HOST=db.example.com
+DATABASE_PORT=5432
+DATABASE_NAME=flowise
+DATABASE_USER=flowise_user
+DATABASE_PASSWORD=secure_password
+DATABASE_SSL=true
+DATABASE_REJECT_UNAUTHORIZED=true
+```
+
+<ParamField path="DATABASE_SSL" type="boolean" default="false">
+  Enable SSL/TLS connection to PostgreSQL
+</ParamField>
+
+<ParamField path="DATABASE_REJECT_UNAUTHORIZED" type="boolean" default="true">
+  Reject connections with invalid SSL certificates. Set to `false` for self-signed certificates.
+</ParamField>
+
+<ParamField path="DATABASE_SSL_KEY_BASE64" type="string">
+  Self-signed SSL certificate in BASE64 format
+  
+  ```bash
+  # Encode certificate to base64
+  cat certificate.crt | base64 -w 0
+  
+  # Add to .env
+  DATABASE_SSL_KEY_BASE64=LS0tLS1CRUdJTi...
+  ```
+</ParamField>
+
+### PostgreSQL Advanced Options
+
+Flowise uses these additional PostgreSQL settings:
+
+- **Connection pooling**: Automatic
+- **Idle timeout**: 120 seconds
+- **Logging**: Errors, warnings, info, and log statements
+- **Application name**: `Flowise`
+
+## MySQL
+
+MySQL is fully supported for Flowise deployments.
+
+### Basic Configuration
+
+```bash
+# MySQL Configuration
+DATABASE_TYPE=mysql
+DATABASE_HOST=localhost
+DATABASE_PORT=3306
+DATABASE_NAME=flowise
+DATABASE_USER=flowise_user
+DATABASE_PASSWORD=secure_password
+```
+
+<ParamField path="DATABASE_TYPE" type="string">
+  Set to `mysql` for MySQL
+</ParamField>
+
+<ParamField path="DATABASE_PORT" type="number" default="3306">
+  MySQL server port
+</ParamField>
+
+### MySQL Setup Steps
+
+1. **Create Database and User**
+
+```sql
+-- Connect to MySQL as root
+mysql -u root -p
+
+-- Create database
+CREATE DATABASE flowise CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+-- Create user
+CREATE USER 'flowise_user'@'localhost' IDENTIFIED BY 'secure_password';
+
+-- Grant privileges
+GRANT ALL PRIVILEGES ON flowise.* TO 'flowise_user'@'localhost';
+
+-- Apply changes
+FLUSH PRIVILEGES;
+
+-- Exit
+EXIT;
+```
+
+2. **Configure Flowise**
+
+```bash
+DATABASE_TYPE=mysql
+DATABASE_HOST=localhost
+DATABASE_PORT=3306
+DATABASE_NAME=flowise
+DATABASE_USER=flowise_user
+DATABASE_PASSWORD=secure_password
+```
+
+### MySQL with SSL
+
+```bash
+DATABASE_TYPE=mysql
+DATABASE_HOST=db.example.com
+DATABASE_PORT=3306
+DATABASE_NAME=flowise
+DATABASE_USER=flowise_user
+DATABASE_PASSWORD=secure_password
+DATABASE_SSL=true
+```
+
+<Note>
+Flowise automatically uses `utf8mb4` charset for MySQL to support full Unicode including emojis and special characters.
+</Note>
+
+## MariaDB
+
+MariaDB configuration is nearly identical to MySQL.
+
+### Basic Configuration
+
+```bash
+# MariaDB Configuration
+DATABASE_TYPE=mariadb
+DATABASE_HOST=localhost
+DATABASE_PORT=3306
+DATABASE_NAME=flowise
+DATABASE_USER=flowise_user
+DATABASE_PASSWORD=secure_password
+```
+
+<ParamField path="DATABASE_TYPE" type="string">
+  Set to `mariadb` for MariaDB
+</ParamField>
+
+### MariaDB Setup Steps
+
+```sql
+-- Connect to MariaDB
+mariadb -u root -p
+
+-- Create database
+CREATE DATABASE flowise CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+-- Create user
+CREATE USER 'flowise_user'@'localhost' IDENTIFIED BY 'secure_password';
+
+-- Grant privileges
+GRANT ALL PRIVILEGES ON flowise.* TO 'flowise_user'@'localhost';
+
+-- Apply changes
+FLUSH PRIVILEGES;
+
+-- Exit
+EXIT;
+```
+
+## Cloud Database Services
+
+### AWS RDS (PostgreSQL)
+
+```bash
+DATABASE_TYPE=postgres
+DATABASE_HOST=flowise-db.xxxxx.us-east-1.rds.amazonaws.com
+DATABASE_PORT=5432
+DATABASE_NAME=flowise
+DATABASE_USER=flowise_admin
+DATABASE_PASSWORD=your_secure_password
+DATABASE_SSL=true
+```
+
+### Google Cloud SQL (PostgreSQL)
+
+```bash
+DATABASE_TYPE=postgres
+DATABASE_HOST=/cloudsql/project:region:instance  # Unix socket
+# OR
+DATABASE_HOST=xx.xx.xx.xx  # Public IP
+DATABASE_PORT=5432
+DATABASE_NAME=flowise
+DATABASE_USER=flowise-user
+DATABASE_PASSWORD=your_secure_password
+DATABASE_SSL=true
+```
+
+### Azure Database for PostgreSQL
+
+```bash
+DATABASE_TYPE=postgres
+DATABASE_HOST=flowise-db.postgres.database.azure.com
+DATABASE_PORT=5432
+DATABASE_NAME=flowise
+DATABASE_USER=flowise_admin@flowise-db
+DATABASE_PASSWORD=your_secure_password
+DATABASE_SSL=true
+DATABASE_REJECT_UNAUTHORIZED=true
+```
+
+### Supabase (PostgreSQL)
+
+```bash
+DATABASE_TYPE=postgres
+DATABASE_HOST=db.xxxxxxxxxxxx.supabase.co
+DATABASE_PORT=5432
+DATABASE_NAME=postgres
+DATABASE_USER=postgres
+DATABASE_PASSWORD=your_project_password
+DATABASE_SSL=true
+```
+
+## Database Migrations
+
+Flowise automatically handles database migrations:
+
+1. **First Startup**: All tables and schemas are created
+2. **Upgrades**: Migrations run automatically when updating Flowise
+3. **Rollback**: Not supported - backup before upgrading
+
+<Warning>
+Always backup your database before upgrading Flowise to a new version.
+</Warning>
+
+### Manual Migration
+
+Migrations run automatically, but you can check migration status:
+
+```bash
+# View current migration status
+npx typeorm migration:show -d dist/DataSource.js
+```
+
+## Database Entities
+
+Flowise creates these main tables:
+
+- `chat_flow` - Chatflow configurations
+- `chat_message` - Chat history and messages  
+- `credential` - Encrypted API credentials
+- `tool` - Custom tools
+- `assistant` - OpenAI assistants
+- `variable` - Global variables
+- `document_store` - Vector store documents
+- `document_store_file_chunk` - Document chunks
+- `lead` - Lead capture data
+- `user` - User accounts (Enterprise)
+- `organization` - Organizations (Enterprise)
+- `workspace` - Workspaces (Enterprise)
+- `role` - Roles and permissions (Enterprise)
+
+## Backup and Restore
+
+### SQLite Backup
+
+```bash
+# Backup
+cp ~/.flowise/database.sqlite ~/.flowise/database.sqlite.backup
+
+# Restore
+cp ~/.flowise/database.sqlite.backup ~/.flowise/database.sqlite
+```
+
+### PostgreSQL Backup
+
+```bash
+# Backup
+pg_dump -h localhost -U flowise_user -d flowise > flowise_backup.sql
+
+# Restore
+psql -h localhost -U flowise_user -d flowise < flowise_backup.sql
+```
+
+### MySQL Backup
+
+```bash
+# Backup
+mysqldump -h localhost -u flowise_user -p flowise > flowise_backup.sql
+
+# Restore
+mysql -h localhost -u flowise_user -p flowise < flowise_backup.sql
+```
+
+## Performance Tuning
+
+### PostgreSQL Connection Pooling
+
+Flowise uses TypeORM connection pooling with these defaults:
+- Idle timeout: 120 seconds
+- Auto-reconnect: Enabled
+
+For high-traffic deployments, adjust PostgreSQL configuration:
+
+```sql
+-- In postgresql.conf
+max_connections = 100
+shared_buffers = 256MB
+effective_cache_size = 1GB
+work_mem = 4MB
+```
+
+### MySQL Performance
+
+```sql
+-- In my.cnf
+max_connections = 100
+innodb_buffer_pool_size = 256M
+innodb_log_file_size = 64M
+```
+
+## Troubleshooting
+
+### Connection Refused
+
+**Problem**: Cannot connect to database
+
+**Solutions**:
+- Verify database server is running
+- Check firewall allows connection on database port
+- Verify `DATABASE_HOST` and `DATABASE_PORT` are correct
+- Test connection manually:
+
+```bash
+# PostgreSQL
+psql -h localhost -p 5432 -U flowise_user -d flowise
+
+# MySQL/MariaDB
+mysql -h localhost -P 3306 -u flowise_user -p flowise
+```
+
+### Authentication Failed
+
+**Problem**: Login error or access denied
+
+**Solutions**:
+- Verify `DATABASE_USER` and `DATABASE_PASSWORD` are correct
+- Check user has correct permissions
+- For MySQL, ensure user is created for correct host (`localhost` vs `%`)
+
+### SSL/TLS Errors
+
+**Problem**: SSL handshake failed
+
+**Solutions**:
+- Set `DATABASE_REJECT_UNAUTHORIZED=false` for self-signed certificates
+- Verify `DATABASE_SSL_KEY_BASE64` is correctly encoded
+- Check database server SSL configuration
+
+### Migration Errors
+
+**Problem**: Migration failed on startup
+
+**Solutions**:
+- Backup database
+- Check logs for specific error
+- Verify database user has CREATE/ALTER table permissions
+- Restore from backup and retry
+
+## Example Production Configuration
+
+### PostgreSQL on AWS RDS
+
+```bash
+# Database Configuration
+DATABASE_TYPE=postgres
+DATABASE_HOST=flowise-prod.xxxxx.us-east-1.rds.amazonaws.com
+DATABASE_PORT=5432
+DATABASE_NAME=flowise_production
+DATABASE_USER=flowise_admin
+DATABASE_PASSWORD=${DB_PASSWORD}  # Use secret management
+DATABASE_SSL=true
+DATABASE_REJECT_UNAUTHORIZED=true
+```
+
+### PostgreSQL on Supabase
+
+```bash
+# Database Configuration  
+DATABASE_TYPE=postgres
+DATABASE_HOST=db.projectref.supabase.co
+DATABASE_PORT=5432
+DATABASE_NAME=postgres
+DATABASE_USER=postgres
+DATABASE_PASSWORD=${SUPABASE_DB_PASSWORD}
+DATABASE_SSL=true
+```

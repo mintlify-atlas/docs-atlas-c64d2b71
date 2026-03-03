@@ -1,0 +1,154 @@
+---
+title: 'API Overview'
+description: 'Learn about the Flowise REST API for programmatic access to chatflows, predictions, and more'
+icon: 'code'
+---
+
+## Introduction
+
+The Flowise API provides programmatic access to manage chatflows, execute predictions, upsert vectors, and handle credentials. The API is RESTful, returns JSON responses, and uses standard HTTP response codes.
+
+## Base URL
+
+All API endpoints are relative to your Flowise instance base URL:
+
+```
+http://localhost:3000/api/v1
+```
+
+For production deployments, replace `localhost:3000` with your domain.
+
+## API Endpoints
+
+The Flowise API is organized around these main resources:
+
+<CardGroup cols={2}>
+  <Card title="Chatflows" icon="diagram-project" href="/api/chatflows">
+    Create, read, update, and delete chatflows
+  </Card>
+  <Card title="Predictions" icon="wand-magic-sparkles" href="/api/predictions">
+    Execute chatflows and get AI predictions
+  </Card>
+  <Card title="Vector Upsert" icon="database" href="/api/vector-upsert">
+    Upsert documents into vector stores
+  </Card>
+  <Card title="Credentials" icon="key" href="/api/credentials">
+    Manage API credentials for integrations
+  </Card>
+  <Card title="Tools" icon="wrench" href="/api/tools">
+    Create and manage custom tools
+  </Card>
+  <Card title="Authentication" icon="shield" href="/api/authentication">
+    Learn about API authentication methods
+  </Card>
+</CardGroup>
+
+### Additional Endpoints
+
+Flowise also provides endpoints for:
+
+- **API Keys** (`/api/v1/apikey`) - Manage API keys for authentication
+- **Assistants** (`/api/v1/assistants`) - Create and manage OpenAI-style assistants
+- **Document Stores** (`/api/v1/documentstore`) - Manage document stores and chunking
+- **Datasets** (`/api/v1/dataset`) - Create and manage datasets for testing
+- **Variables** (`/api/v1/variables`) - Manage global and runtime variables
+- **Executions** (`/api/v1/executions`) - View chatflow execution history
+- **Statistics** (`/api/v1/stats`) - Get usage statistics
+
+## Response Format
+
+All API responses are returned in JSON format. Successful responses return a `200` status code along with the requested data.
+
+```json
+{
+  "id": "chatflow-id",
+  "name": "My Chatflow",
+  "deployed": true,
+  "isPublic": false
+}
+```
+
+## Error Handling
+
+The API uses standard HTTP status codes to indicate success or failure:
+
+| Status Code | Description |
+|------------|-------------|
+| `200` | Success |
+| `400` | Bad Request - Invalid parameters |
+| `401` | Unauthorized - Invalid API key |
+| `403` | Forbidden - Insufficient permissions |
+| `404` | Not Found - Resource doesn't exist |
+| `412` | Precondition Failed - Missing required parameters |
+| `500` | Internal Server Error |
+
+Error responses include a message describing the issue:
+
+```json
+{
+  "message": "Error: chatflowsController.getChatflowById - id not provided!"
+}
+```
+
+## Rate Limiting
+
+Prediction and vector upsert endpoints may be subject to rate limiting based on your chatflow configuration. Rate limit details are configured per chatflow.
+
+## Pagination
+
+List endpoints support pagination using `page` and `limit` query parameters:
+
+```bash
+GET /api/v1/chatflows?page=1&limit=10
+```
+
+<ParamField query="page" type="number" default="1">
+  Page number for pagination
+</ParamField>
+
+<ParamField query="limit" type="number" default="10">
+  Number of items per page
+</ParamField>
+
+## SDKs and Libraries
+
+While Flowise doesn't provide official SDKs, the API is designed to work with any HTTP client:
+
+<CodeGroup>
+
+```javascript JavaScript
+const response = await fetch('http://localhost:3000/api/v1/chatflows', {
+  headers: {
+    'Authorization': 'Bearer YOUR_API_KEY'
+  }
+});
+const data = await response.json();
+```
+
+```python Python
+import requests
+
+response = requests.get(
+    'http://localhost:3000/api/v1/chatflows',
+    headers={'Authorization': 'Bearer YOUR_API_KEY'}
+)
+data = response.json()
+```
+
+```bash cURL
+curl -X GET http://localhost:3000/api/v1/chatflows \
+  -H "Authorization: Bearer YOUR_API_KEY"
+```
+
+</CodeGroup>
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Set Up Authentication" icon="key" href="/api/authentication">
+    Configure API keys for secure access
+  </Card>
+  <Card title="Execute Predictions" icon="play" href="/api/predictions">
+    Start making predictions with your chatflows
+  </Card>
+</CardGroup>

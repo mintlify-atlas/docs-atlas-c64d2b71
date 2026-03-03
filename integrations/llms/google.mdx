@@ -1,0 +1,284 @@
+---
+title: 'Google Gemini'
+description: 'Integrate Google Gemini 1.5 Pro and Flash models with multimodal capabilities'
+icon: 'google'
+---
+
+## Overview
+
+Google Gemini integration provides access to Gemini 1.5 Pro, Flash, and 2.5 models through the Generative AI API. Supports multimodal inputs (text, images, video), large context windows, and advanced reasoning.
+
+## Setup
+
+<Steps>
+  <Step title="Get API Key">
+    Visit [Google AI Studio](https://makersuite.google.com/app/apikey) and create an API key
+  </Step>
+  
+  <Step title="Add Credential">
+    In Flowise, create a new Google Generative AI credential with your API key
+  </Step>
+  
+  <Step title="Add to Canvas">
+    Drag the **ChatGoogleGenerativeAI** node from Chat Models to your canvas
+  </Step>
+</Steps>
+
+## Configuration
+
+### Basic Parameters
+
+<ParamField path="credential" type="credential" required>
+  Google Generative AI API key credential
+</ParamField>
+
+<ParamField path="modelName" type="string" default="gemini-1.5-flash-latest">
+  The Gemini model to use:
+  - `gemini-2.5-pro` - Most capable, latest generation
+  - `gemini-2.5-flash` - Fast and efficient
+  - `gemini-1.5-pro-latest` - Previous generation pro
+  - `gemini-1.5-flash-latest` - Previous generation flash
+  - `gemini-1.0-pro` - Legacy model
+</ParamField>
+
+<ParamField path="customModelName" type="string">
+  Override with a custom model name (e.g., experimental models like `gemini-1.5-pro-exp-0801`)
+</ParamField>
+
+<ParamField path="temperature" type="number" default={0.9}>
+  Controls randomness (0.0 to 1.0). Lower = more deterministic
+</ParamField>
+
+<ParamField path="streaming" type="boolean" default={true}>
+  Enable streaming responses
+</ParamField>
+
+### Advanced Parameters
+
+<ParamField path="maxOutputTokens" type="number">
+  Maximum tokens to generate. Gemini 1.5 supports up to 8192 output tokens
+</ParamField>
+
+<ParamField path="topP" type="number">
+  Nucleus sampling threshold (0.0 to 1.0)
+</ParamField>
+
+<ParamField path="topK" type="number">
+  Sample from top K most probable tokens. Must be positive
+</ParamField>
+
+### Safety Settings
+
+<ParamField path="safetySettings" type="array">
+  Configure content filtering for different harm categories:
+  
+  **Harm Categories:**
+  - `HARM_CATEGORY_DANGEROUS_CONTENT` - Violence, dangerous acts
+  - `HARM_CATEGORY_HARASSMENT` - Harassment, bullying
+  - `HARM_CATEGORY_HATE_SPEECH` - Hate speech
+  - `HARM_CATEGORY_SEXUALLY_EXPLICIT` - Sexual content
+  - `HARM_CATEGORY_CIVIC_INTEGRITY` - Election-related content
+  
+  **Block Thresholds:**
+  - `BLOCK_NONE` - Don't block any content
+  - `BLOCK_ONLY_HIGH` - Block only high-probability harmful content
+  - `BLOCK_MEDIUM_AND_ABOVE` - Block medium and high
+  - `BLOCK_LOW_AND_ABOVE` - Block low, medium, and high
+  - `HARM_BLOCK_THRESHOLD_UNSPECIFIED` - Use default
+</ParamField>
+
+### Thinking Budget (Gemini 2.5)
+
+<Note>
+Thinking budget is available for Gemini 2.5 models to guide internal reasoning.
+</Note>
+
+<ParamField path="thinkingBudget" type="number">
+  Guide the number of thinking tokens:
+  - `-1` - Dynamic budget (recommended)
+  - `0` - Disable thinking
+  - Positive integer - Fixed thinking token budget
+</ParamField>
+
+### Multimodal Support
+
+<ParamField path="allowImageUploads" type="boolean" default={false}>
+  Enable image input for multimodal analysis
+</ParamField>
+
+<ParamField path="baseUrl" type="string">
+  Custom API base URL (for Vertex AI or custom endpoints)
+</ParamField>
+
+## Usage Examples
+
+### Basic Text Chat
+
+```typescript
+// Standard configuration
+Model Name: gemini-1.5-flash-latest
+Temperature: 0.7
+Max Output Tokens: 2048
+Streaming: true
+```
+
+### Multimodal Image Analysis
+
+```typescript
+// Analyze images with text
+Model Name: gemini-1.5-pro-latest
+Allow Image Uploads: true
+Max Output Tokens: 4096
+Temperature: 0.4
+```
+
+### With Safety Settings
+
+```json
+// Configure content filtering
+{
+  "safetySettings": [
+    {
+      "harmCategory": "HARM_CATEGORY_HARASSMENT",
+      "harmBlockThreshold": "BLOCK_MEDIUM_AND_ABOVE"
+    },
+    {
+      "harmCategory": "HARM_CATEGORY_HATE_SPEECH",
+      "harmBlockThreshold": "BLOCK_LOW_AND_ABOVE"
+    }
+  ]
+}
+```
+
+### Gemini 2.5 with Thinking
+
+```typescript
+// Advanced reasoning
+Model Name: gemini-2.5-pro
+Thinking Budget: -1  // Dynamic
+Temperature: 0.3
+Max Output Tokens: 8192
+```
+
+### Using Custom Model
+
+```typescript
+// Try experimental models
+Model Name: gemini-1.5-pro-latest
+Custom Model Name: gemini-1.5-pro-exp-0827
+```
+
+## Model Comparison
+
+| Model | Context Window | Output Tokens | Best For | Speed |
+|-------|----------------|---------------|----------|-------|
+| Gemini 2.5 Pro | 2M tokens | 8K | Complex reasoning | Medium |
+| Gemini 2.5 Flash | 1M tokens | 8K | Fast responses | Fast |
+| Gemini 1.5 Pro | 1M tokens | 8K | Multimodal tasks | Medium |
+| Gemini 1.5 Flash | 1M tokens | 8K | High volume | Very Fast |
+
+## Best Practices
+
+<CardGroup cols={2}>
+  <Card title="Model Selection" icon="sliders">
+    - Use **Flash** for most production tasks
+    - Use **Pro** for complex analysis
+    - Use **2.5** for latest capabilities
+    - Test experimental models in dev
+  </Card>
+  
+  <Card title="Safety Configuration" icon="shield">
+    - Set appropriate safety thresholds
+    - Test with your content
+    - Monitor blocked responses
+    - Adjust per use case
+  </Card>
+  
+  <Card title="Multimodal" icon="image">
+    - Enable image uploads only when needed
+    - Consider image size and format
+    - Use clear text prompts
+    - Test with sample images
+  </Card>
+  
+  <Card title="Performance" icon="rocket">
+    - Enable streaming for UX
+    - Use Flash for speed
+    - Set appropriate token limits
+    - Monitor latency
+  </Card>
+</CardGroup>
+
+## Long Context Windows
+
+Gemini models support extremely large contexts:
+
+- **Gemini 2.5 Pro**: Up to 2 million tokens
+- **Gemini 1.5 Pro/Flash**: Up to 1 million tokens
+
+**Use cases:**
+- Analyze entire codebases
+- Process lengthy documents
+- Long conversation history
+- Multi-turn complex tasks
+
+<Warning>
+Large contexts increase latency and cost. Use only when necessary.
+</Warning>
+
+## Common Issues
+
+<AccordionGroup>
+  <Accordion title="Safety Filter Triggered">
+    If responses are blocked:
+    - Check safety settings configuration
+    - Review harm categories and thresholds
+    - Consider using `BLOCK_NONE` for dev/test
+    - Rephrase prompts to be less ambiguous
+  </Accordion>
+  
+  <Accordion title="Rate Limiting">
+    Google AI has rate limits based on your tier:
+    - **Free tier**: 15 RPM, 1M TPM
+    - **Paid tier**: 360 RPM, 4M TPM
+    
+    Solutions:
+    - Implement exponential backoff
+    - Batch requests when possible
+    - Consider paid tier for production
+  </Accordion>
+  
+  <Accordion title="Model Not Available">
+    Some models require allowlist access:
+    - Use generally available models
+    - Check model availability by region
+    - Request access for experimental models
+  </Accordion>
+  
+  <Accordion title="Image Upload Issues">
+    For multimodal inputs:
+    - Ensure `allowImageUploads` is enabled
+    - Check image format (JPEG, PNG, WebP)
+    - Verify image size limits
+    - Use supported MIME types
+  </Accordion>
+</AccordionGroup>
+
+## Pricing
+
+Gemini uses input/output token pricing:
+
+| Model | Input (per 1M tokens) | Output (per 1M tokens) |
+|-------|----------------------|------------------------|
+| Gemini 1.5 Flash | $0.075 | $0.30 |
+| Gemini 1.5 Pro | $1.25 | $5.00 |
+| Gemini 2.5 Pro | $2.50 | $10.00 |
+
+*Prices as of 2024. Check [Google AI Pricing](https://ai.google.dev/pricing) for current rates.*
+
+## Related Resources
+
+- [Google AI Studio](https://makersuite.google.com)
+- [Gemini API Documentation](https://ai.google.dev/docs)
+- [Safety Settings Guide](https://ai.google.dev/gemini-api/docs/safety-settings)
+- [Model Card](https://ai.google.dev/gemini-api/docs/models/gemini)

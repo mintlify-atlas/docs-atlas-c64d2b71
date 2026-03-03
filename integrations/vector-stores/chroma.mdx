@@ -1,0 +1,379 @@
+---
+title: 'Chroma'
+description: 'Open-source embedding database for local development and production deployments'
+icon: 'database'
+---
+
+## Overview
+
+Chroma is an open-source embedding database designed for AI applications. Perfect for local development with easy deployment to cloud or self-hosted environments.
+
+## Setup
+
+<Tabs>
+  <Tab title="Local (In-Memory)">
+    No setup required! Chroma runs in-memory by default.
+    
+    ```typescript
+    // Simply leave Chroma URL empty
+    Collection Name: my-collection
+    Embeddings: OpenAI Embeddings
+    ```
+  </Tab>
+  
+  <Tab title="Local (Persistent)">
+    Run Chroma server locally:
+    
+    ```bash
+    # Using Docker
+    docker run -p 8000:8000 chromadb/chroma
+    
+    # Or install with pip
+    pip install chromadb
+    chroma run --path ./chroma_data
+    ```
+    
+    Then in Flowise:
+    ```typescript
+    Chroma URL: http://localhost:8000
+    Collection Name: my-collection
+    ```
+  </Tab>
+  
+  <Tab title="Cloud (Chroma Cloud)">
+    Sign up at [Chroma Cloud](https://www.trychroma.com)
+    
+    ```typescript
+    // Add credential in Flowise
+    Chroma API Key: your-cloud-api-key
+    Chroma Tenant: your-tenant
+    Chroma Database: your-database
+    
+    // In node configuration
+    Chroma URL: https://api.trychroma.com
+    Collection Name: my-collection
+    ```
+  </Tab>
+</Tabs>
+
+## Configuration
+
+### Required Parameters
+
+<ParamField path="collectionName" type="string" required>
+  Name of the collection to store/retrieve embeddings
+</ParamField>
+
+<ParamField path="embeddings" type="Embeddings" required>
+  Embedding model to use (e.g., OpenAI Embeddings)
+</ParamField>
+
+### Optional Parameters
+
+<ParamField path="document" type="Document[]">
+  Documents to upsert into the collection
+</ParamField>
+
+<ParamField path="chromaURL" type="string">
+  URL of Chroma server. Leave empty for in-memory mode:
+  - Empty = In-memory
+  - `http://localhost:8000` = Local server
+  - `https://api.trychroma.com` = Chroma Cloud
+</ParamField>
+
+<ParamField path="credential" type="credential">
+  Chroma API credential (only needed for cloud-hosted instances)
+</ParamField>
+
+<ParamField path="recordManager" type="RecordManager">
+  Track indexed documents to prevent duplication
+</ParamField>
+
+<ParamField path="chromaMetadataFilter" type="json">
+  Filter search results by metadata:
+  ```json
+  {
+    "source": "docs",
+    "category": "tutorial"
+  }
+  ```
+</ParamField>
+
+<ParamField path="topK" type="number" default={4}>
+  Number of results to return
+</ParamField>
+
+## Usage Examples
+
+### In-Memory (Development)
+
+```typescript
+// Fastest setup - no persistence
+Collection Name: test-collection
+Embeddings: OpenAI Embeddings
+Chroma URL: [leave empty]
+Top K: 4
+
+// Data stored in memory, lost on restart
+```
+
+### Local Persistent
+
+```bash
+# Start Chroma server
+docker run -p 8000:8000 -v ./chroma_data:/chroma/chroma chromadb/chroma
+```
+
+```typescript
+// Connect to local server
+Collection Name: my-docs
+Chroma URL: http://localhost:8000
+Embeddings: OpenAI Embeddings
+```
+
+### Chroma Cloud
+
+```typescript
+// Cloud configuration
+Chroma URL: https://api.trychroma.com
+Collection Name: production-docs
+Credential: Chroma API (with key, tenant, database)
+Embeddings: OpenAI Embeddings
+```
+
+### With Metadata Filtering
+
+```json
+// Search only specific documents
+{
+  "chromaMetadataFilter": {
+    "type": "api-docs",
+    "version": "v2"
+  }
+}
+```
+
+### With Record Manager
+
+```typescript
+// Prevent duplicate indexing
+Document: Text Loader
+Collection Name: knowledge-base
+Record Manager: Postgres Record Manager
+Embeddings: OpenAI Embeddings
+
+// Only new/changed docs are processed
+```
+
+## Metadata Filter Syntax
+
+Chroma supports WHERE clause filtering:
+
+```json
+// Simple equality
+{ "category": "tutorial" }
+
+// Operators: $eq, $ne, $gt, $gte, $lt, $lte
+{
+  "year": { "$gte": 2023 },
+  "rating": { "$gt": 4.5 }
+}
+
+// $in operator
+{
+  "status": { "$in": ["published", "reviewed"] }
+}
+
+// Logical operators: $and, $or
+{
+  "$and": [
+    { "category": "docs" },
+    { "language": "en" }
+  ]
+}
+
+{
+  "$or": [
+    { "priority": "high" },
+    { "urgent": true }
+  ]
+}
+```
+
+## Best Practices
+
+<CardGroup cols={2}>
+  <Card title="Development" icon="code">
+    - Use in-memory for quick testing
+    - Use local server for development
+    - Small datasets work great in-memory
+    - Easy to reset and iterate
+  </Card>
+  
+  <Card title="Production" icon="rocket">
+    - Use Chroma Cloud or self-hosted server
+    - Enable authentication
+    - Set up backups
+    - Monitor collection sizes
+  </Card>
+  
+  <Card title="Performance" icon="gauge">
+    - Create indexes on frequently queried metadata
+    - Use appropriate collection sizes
+    - Consider sharding for very large datasets
+    - Batch upserts when possible
+  </Card>
+  
+  <Card title="Data Management" icon="database">
+    - Use descriptive collection names
+    - Tag documents with metadata
+    - Use record manager to avoid duplicates
+    - Implement collection lifecycle management
+  </Card>
+</CardGroup>
+
+## Collection Management
+
+### Creating Collections
+
+Collections are created automatically when you first upsert documents.
+
+### Deleting Collections
+
+```python
+# Via Chroma client (if needed)
+import chromadb
+client = chromadb.HttpClient(host="localhost", port=8000)
+client.delete_collection(name="old-collection")
+```
+
+### Listing Collections
+
+```python
+# Check existing collections
+client = chromadb.HttpClient(host="localhost", port=8000)
+collections = client.list_collections()
+for collection in collections:
+    print(f"{collection.name}: {collection.count()} documents")
+```
+
+## Deployment Options
+
+### Docker Compose
+
+```yaml
+version: '3'
+services:
+  chroma:
+    image: chromadb/chroma
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./chroma_data:/chroma/chroma
+    environment:
+      - CHROMA_SERVER_AUTH_PROVIDER=token
+      - CHROMA_SERVER_AUTH_CREDENTIALS=your-secret-token
+```
+
+### Kubernetes
+
+```yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: chroma
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: chroma
+  template:
+    metadata:
+      labels:
+        app: chroma
+    spec:
+      containers:
+      - name: chroma
+        image: chromadb/chroma
+        ports:
+        - containerPort: 8000
+        volumeMounts:
+        - name: chroma-data
+          mountPath: /chroma/chroma
+      volumes:
+      - name: chroma-data
+        persistentVolumeClaim:
+          claimName: chroma-pvc
+```
+
+## Common Issues
+
+<AccordionGroup>
+  <Accordion title="Connection Refused">
+    Can't connect to Chroma server
+    
+    **Solution:**
+    - Verify Chroma server is running
+    - Check URL format: `http://localhost:8000`
+    - Ensure port 8000 is not blocked
+    - For Docker: Check container is running
+  </Accordion>
+  
+  <Accordion title="Collection Not Found">
+    Error accessing collection
+    
+    **Solution:**
+    - Collections are auto-created on first upsert
+    - Check collection name spelling
+    - Ensure documents were successfully indexed
+    - Verify you're connecting to correct server
+  </Accordion>
+  
+  <Accordion title="In-Memory Data Lost">
+    Data disappears after restart
+    
+    **Solution:**
+    - In-memory mode doesn't persist
+    - Use Chroma server for persistence
+    - Configure persistent volume
+    - Consider Chroma Cloud for managed hosting
+  </Accordion>
+  
+  <Accordion title="Authentication Failed">
+    Chroma Cloud connection issues
+    
+    **Solution:**
+    - Verify API key is correct
+    - Check tenant and database names
+    - Ensure credential is properly configured
+    - Test with Chroma Cloud console
+  </Accordion>
+</AccordionGroup>
+
+## Chroma vs Other Vector DBs
+
+| Feature | Chroma | Pinecone | Qdrant |
+|---------|--------|----------|--------|
+| Open Source | Yes | No | Yes |
+| In-Memory | Yes | No | Yes |
+| Managed Cloud | Yes | Yes | Yes |
+| Self-Hosted | Yes | No | Yes |
+| Best For | Development | Production | Production |
+| Ease of Use | Excellent | Very Good | Good |
+
+## Outputs
+
+<ParamField path="retriever" type="VectorStoreRetriever">
+  Retriever interface for use in chains and agents
+</ParamField>
+
+<ParamField path="vectorStore" type="ChromaVectorStore">
+  Direct vector store access for custom operations
+</ParamField>
+
+## Related Resources
+
+- [Chroma Documentation](https://docs.trychroma.com)
+- [Chroma GitHub](https://github.com/chroma-core/chroma)
+- [Chroma Cloud](https://www.trychroma.com)
+- [Getting Started Guide](https://docs.trychroma.com/getting-started)

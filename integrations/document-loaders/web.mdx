@@ -1,0 +1,355 @@
+---
+title: 'Web Scraper (Cheerio)'
+description: 'Load and extract content from web pages in Flowise'
+icon: 'spider-web'
+---
+
+The Cheerio Web Scraper allows you to extract content from web pages using CSS selectors. It's a fast and efficient way to load data from websites into your Flowise workflows.
+
+## Overview
+
+This loader uses the LangChain `CheerioWebBaseLoader` to fetch and parse HTML content from web pages. It supports single page scraping, web crawling, and sitemap-based extraction.
+
+<Note>
+  **What is Cheerio?**
+  
+  Cheerio is a fast, flexible HTML parsing library for Node.js. It implements a subset of jQuery's API, making it easy to traverse and manipulate HTML documents with familiar CSS selectors.
+</Note>
+
+## Configuration
+
+### Basic Parameters
+
+<ParamField path="url" type="string" required>
+  The URL of the webpage to scrape. Must be a valid HTTP or HTTPS URL.
+  
+  **Example**: `https://docs.example.com/getting-started`
+</ParamField>
+
+<ParamField path="textSplitter" type="TextSplitter" optional>
+  Optional text splitter to chunk the extracted content into smaller pieces.
+</ParamField>
+
+### Advanced Parameters
+
+<ParamField path="relativeLinksMethod" type="options" optional>
+  Method to retrieve and process multiple related pages:
+  
+  <Tabs>
+    <Tab title="Web Crawl">
+      Crawls relative links found in the HTML content of the specified URL.
+      
+      - Follows `<a href>` tags
+      - Stays within the same domain
+      - Respects the specified limit
+    </Tab>
+    
+    <Tab title="Scrape XML Sitemap">
+      Extracts URLs from an XML sitemap.
+      
+      - Faster than web crawling
+      - Requires a valid sitemap URL
+      - Ideal for structured documentation sites
+      
+      **Example**: `https://docs.example.com/sitemap.xml`
+    </Tab>
+  </Tabs>
+</ParamField>
+
+<ParamField path="limit" type="number" default="10" optional>
+  Maximum number of pages to scrape when using relative links method.
+  
+  - Set to `0` to scrape all discovered links (use with caution)
+  - Default is `10` pages
+  
+  <Warning>
+    Retrieving all links might take a long time, and all links will be re-scraped if the flow's state changes (e.g., different URL, chunk size, etc.).
+  </Warning>
+</ParamField>
+
+<ParamField path="selector" type="string" optional>
+  CSS selector to extract specific content from the page.
+  
+  **Examples**:
+  - `article` - Extract content within `<article>` tags
+  - `.content` - Extract elements with class "content"
+  - `#main-content` - Extract element with ID "main-content"
+  - `div.post-body p` - Extract paragraphs within div.post-body
+  
+  <Note>
+    If not specified, the entire page body will be extracted.
+  </Note>
+</ParamField>
+
+<ParamField path="metadata" type="json" optional>
+  Additional metadata to attach to all extracted documents.
+  
+  ```json
+  {
+    "source_type": "documentation",
+    "scrape_date": "2024-01-15",
+    "category": "tutorials"
+  }
+  ```
+</ParamField>
+
+<ParamField path="omitMetadataKeys" type="string" optional>
+  Comma-separated list of metadata keys to exclude from the output.
+  
+  Use `*` to omit all default metadata keys except those in Additional Metadata.
+</ParamField>
+
+## Output
+
+The web scraper provides two output formats:
+
+<Tabs>
+  <Tab title="Document">
+    Returns an array of document objects with metadata and page content.
+    
+    ```json
+    [
+      {
+        "pageContent": "Getting Started\n\nWelcome to our documentation...",
+        "metadata": {
+          "source": "https://docs.example.com/getting-started",
+          "loc": {
+            "lines": {
+              "from": 1,
+              "to": 1
+            }
+          }
+        }
+      }
+    ]
+    ```
+  </Tab>
+  
+  <Tab title="Text">
+    Returns concatenated text from all scraped pages.
+    
+    ```text
+    Getting Started
+    
+    Welcome to our documentation...
+    
+    Installation Guide
+    
+    Follow these steps to install...
+    ```
+  </Tab>
+</Tabs>
+
+## Usage Examples
+
+### Single Page Scraping
+
+<Steps>
+  <Step title="Add Web Scraper Node">
+    Drag the **Cheerio Web Scraper** node onto your canvas.
+  </Step>
+  
+  <Step title="Enter URL">
+    Provide the URL of the page you want to scrape.
+    
+    ```
+    https://flowise.ai/docs/getting-started
+    ```
+  </Step>
+  
+  <Step title="Optional: Add CSS Selector">
+    If you only need specific content, add a CSS selector:
+    
+    ```
+    article.documentation
+    ```
+  </Step>
+  
+  <Step title="Connect to Processing Nodes">
+    Connect the output to vector stores, LLMs, or other nodes.
+  </Step>
+</Steps>
+
+### Crawling Multiple Pages
+
+<CodeGroup>
+```json Configuration Example
+{
+  "url": "https://docs.example.com",
+  "relativeLinksMethod": "webCrawl",
+  "limit": 25,
+  "selector": ".markdown-body"
+}
+```
+</CodeGroup>
+
+This configuration will:
+1. Start at the base URL
+2. Discover up to 25 relative links
+3. Extract only content within `.markdown-body` class from each page
+
+### Using XML Sitemap
+
+<CodeGroup>
+```json Sitemap Configuration
+{
+  "url": "https://docs.example.com/sitemap.xml",
+  "relativeLinksMethod": "scrapeXMLSitemap",
+  "limit": 50
+}
+```
+</CodeGroup>
+
+<Tip>
+  Using an XML sitemap is typically faster and more reliable than web crawling, especially for large documentation sites.
+</Tip>
+
+### Extracting Specific Content
+
+<Tabs>
+  <Tab title="Blog Posts">
+    ```css
+    article.blog-post
+    ```
+    Extracts content from blog post articles only.
+  </Tab>
+  
+  <Tab title="Documentation">
+    ```css
+    .docs-content
+    ```
+    Extracts documentation content sections.
+  </Tab>
+  
+  <Tab title="Product Descriptions">
+    ```css
+    div.product-description
+    ```
+    Extracts product information from e-commerce pages.
+  </Tab>
+  
+  <Tab title="News Articles">
+    ```css
+    .article-body p
+    ```
+    Extracts paragraph content from news articles.
+  </Tab>
+</Tabs>
+
+## Common Use Cases
+
+<CardGroup cols={2}>
+  <Card title="Documentation Indexing" icon="book">
+    Scrape and index entire documentation sites for AI-powered search
+  </Card>
+  
+  <Card title="Content Monitoring" icon="bell">
+    Periodically scrape pages to monitor content changes
+  </Card>
+  
+  <Card title="Knowledge Base Creation" icon="database">
+    Build knowledge bases from web content for RAG applications
+  </Card>
+  
+  <Card title="Competitive Analysis" icon="chart-line">
+    Extract competitor information for analysis (respect robots.txt)
+  </Card>
+</CardGroup>
+
+## Limitations
+
+<Warning>
+  **Important Limitations**
+  
+  - **No JavaScript Execution**: Cheerio only parses static HTML. For JavaScript-heavy sites, use Puppeteer or Playwright loaders instead.
+  - **PDF Files**: The loader skips PDF URLs automatically. Use the PDF loader for PDF content.
+  - **Authentication**: Does not support pages requiring login. Use authenticated API loaders for protected content.
+</Warning>
+
+## Troubleshooting
+
+<AccordionGroup>
+  <Accordion title="Empty or missing content">
+    **Possible causes**:
+    1. The page uses JavaScript to render content (use Puppeteer loader instead)
+    2. CSS selector is incorrect or too specific
+    3. Website blocks scrapers (check user agent requirements)
+    
+    **Solutions**:
+    - Inspect the page HTML to verify selector
+    - Remove the selector to get all content first
+    - Try the Puppeteer Web Scraper for JS-rendered pages
+  </Accordion>
+  
+  <Accordion title="No relative links found">
+    **Possible causes**:
+    - URL doesn't contain links to other pages
+    - Links use absolute URLs to different domains
+    - Sitemap URL is incorrect
+    
+    **Solutions**:
+    - Verify the page contains `<a>` tags with relative hrefs
+    - If using sitemap method, ensure the URL points to a valid XML sitemap
+    - Check browser DevTools to see the page structure
+  </Accordion>
+  
+  <Accordion title="Scraping takes too long">
+    **Solutions**:
+    - Reduce the limit parameter to fewer pages
+    - Use XML sitemap method instead of web crawl
+    - Add more specific CSS selectors to reduce content size
+    - Implement caching for frequently accessed pages
+  </Accordion>
+  
+  <Accordion title="Invalid URL error">
+    Ensure your URL:
+    - Starts with `http://` or `https://`
+    - Is properly formatted with no spaces
+    - Points to an accessible webpage
+  </Accordion>
+</AccordionGroup>
+
+## Best Practices
+
+<Check>
+  **Web Scraping Ethics**
+  
+  1. **Respect robots.txt**: Check website's robots.txt file before scraping
+  2. **Rate Limiting**: Use reasonable limits to avoid overwhelming servers
+  3. **Terms of Service**: Ensure scraping complies with website ToS
+  4. **Attribution**: Keep source metadata when using scraped content
+</Check>
+
+<Tip>
+  **Optimization Tips**
+  
+  - Use specific CSS selectors to reduce noise and improve quality
+  - Combine with text splitters for better chunking
+  - Add descriptive metadata to improve retrieval accuracy
+  - Cache frequently accessed pages to reduce API calls
+</Tip>
+
+## Comparison with Other Web Scrapers
+
+| Feature | Cheerio | Puppeteer | Playwright |
+|---------|---------|-----------|------------|
+| Speed | ⚡ Fastest | 🐢 Slower | 🐢 Slower |
+| JavaScript Support | ❌ No | ✅ Yes | ✅ Yes |
+| Resource Usage | 💚 Low | 🔴 High | 🔴 High |
+| Best For | Static HTML | Dynamic sites | Cross-browser testing |
+
+## Related Resources
+
+<CardGroup cols={2}>
+  <Card title="Puppeteer Scraper" icon="chrome">
+    For JavaScript-rendered pages
+  </Card>
+  
+  <Card title="Vector Stores" icon="database" href="/integrations/vector-stores/pinecone">
+    Store scraped content for retrieval
+  </Card>
+  
+  <Card title="Document Loaders" icon="file-arrow-down" href="/integrations/document-loaders/overview">
+    Explore other loader types
+  </Card>
+</CardGroup>

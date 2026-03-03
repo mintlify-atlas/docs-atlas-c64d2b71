@@ -1,0 +1,358 @@
+---
+title: 'Chatflows'
+description: 'API endpoints for managing chatflows'
+icon: 'diagram-project'
+---
+
+## Overview
+
+Chatflows are the core building blocks in Flowise. These endpoints allow you to create, retrieve, update, and delete chatflows programmatically.
+
+<Note>
+All chatflow endpoints require JWT authentication. See [Authentication](/api/authentication) for details.
+</Note>
+
+## List All Chatflows
+
+Retrieve a list of all chatflows in your workspace.
+
+```bash GET /api/v1/chatflows
+curl -X GET http://localhost:3000/api/v1/chatflows \
+  -H "Authorization: Bearer YOUR_JWT_TOKEN"
+```
+
+### Query Parameters
+
+<ParamField query="type" type="string">
+  Filter by chatflow type: `CHATFLOW`, `AGENTFLOW`, `MULTIAGENT`, or `ASSISTANT`
+</ParamField>
+
+<ParamField query="page" type="number" default="1">
+  Page number for pagination
+</ParamField>
+
+<ParamField query="limit" type="number" default="10">
+  Number of items per page
+</ParamField>
+
+### Response
+
+```json
+[
+  {
+    "id": "chatflow-uuid",
+    "name": "Customer Support Bot",
+    "flowData": "{\"nodes\":[...],\"edges\":[...]}",
+    "deployed": true,
+    "isPublic": false,
+    "apikeyid": "key_abc123",
+    "chatbotConfig": "{...}",
+    "apiConfig": "{...}",
+    "category": "Customer Service",
+    "type": "CHATFLOW",
+    "workspaceId": "workspace-id",
+    "createdDate": "2024-03-15T10:30:00.000Z",
+    "updatedDate": "2024-03-15T14:20:00.000Z"
+  }
+]
+```
+
+<ResponseField name="id" type="string" required>
+  Unique identifier for the chatflow
+</ResponseField>
+
+<ResponseField name="name" type="string" required>
+  Display name of the chatflow
+</ResponseField>
+
+<ResponseField name="flowData" type="string" required>
+  JSON string containing the flow's nodes and edges
+</ResponseField>
+
+<ResponseField name="deployed" type="boolean">
+  Whether the chatflow is deployed
+</ResponseField>
+
+<ResponseField name="isPublic" type="boolean">
+  Whether the chatflow is publicly accessible
+</ResponseField>
+
+<ResponseField name="apikeyid" type="string">
+  ID of the API key required to access this chatflow
+</ResponseField>
+
+<ResponseField name="type" type="string">
+  Chatflow type: `CHATFLOW`, `AGENTFLOW`, `MULTIAGENT`, or `ASSISTANT`
+</ResponseField>
+
+<ResponseField name="workspaceId" type="string" required>
+  ID of the workspace this chatflow belongs to
+</ResponseField>
+
+## Get Chatflow by ID
+
+Retrieve a specific chatflow by its ID.
+
+```bash GET /api/v1/chatflows/:id
+curl -X GET http://localhost:3000/api/v1/chatflows/CHATFLOW_ID \
+  -H "Authorization: Bearer YOUR_JWT_TOKEN"
+```
+
+### Path Parameters
+
+<ParamField path="id" type="string" required>
+  The unique identifier of the chatflow
+</ParamField>
+
+### Response
+
+Returns a single chatflow object with the same structure as shown in the list response.
+
+## Get Chatflows by API Key
+
+Retrieve chatflows accessible by a specific API key.
+
+```bash GET /api/v1/chatflows/apikey/:apikey
+curl -X GET http://localhost:3000/api/v1/chatflows/apikey/YOUR_API_KEY
+```
+
+### Path Parameters
+
+<ParamField path="apikey" type="string" required>
+  The API key to filter chatflows
+</ParamField>
+
+### Query Parameters
+
+<ParamField query="keyonly" type="boolean">
+  If true, only return chatflows specifically bound to this API key
+</ParamField>
+
+### Response
+
+Returns an array of chatflows that are either:
+- Bound to the specified API key (when `apikeyid` matches)
+- Not bound to any API key (when `apikeyid` is null or empty) and `keyonly` is not set
+
+## Create Chatflow
+
+Create a new chatflow.
+
+```bash POST /api/v1/chatflows
+curl -X POST http://localhost:3000/api/v1/chatflows \
+  -H "Authorization: Bearer YOUR_JWT_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "My New Chatflow",
+    "flowData": "{\"nodes\":[],\"edges\":[]}",
+    "deployed": false,
+    "isPublic": false,
+    "type": "CHATFLOW"
+  }'
+```
+
+### Request Body
+
+<ParamField body="name" type="string" required>
+  Name of the chatflow
+</ParamField>
+
+<ParamField body="flowData" type="string" required>
+  JSON string containing the flow's nodes and edges configuration
+</ParamField>
+
+<ParamField body="deployed" type="boolean" default="false">
+  Whether the chatflow should be deployed
+</ParamField>
+
+<ParamField body="isPublic" type="boolean" default="false">
+  Whether the chatflow is publicly accessible
+</ParamField>
+
+<ParamField body="apikeyid" type="string">
+  ID of the API key to bind to this chatflow
+</ParamField>
+
+<ParamField body="type" type="string" default="CHATFLOW">
+  Type of flow: `CHATFLOW`, `AGENTFLOW`, `MULTIAGENT`, or `ASSISTANT`
+</ParamField>
+
+<ParamField body="category" type="string">
+  Category for organizing chatflows
+</ParamField>
+
+<ParamField body="chatbotConfig" type="string">
+  JSON string with chatbot UI configuration
+</ParamField>
+
+<ParamField body="apiConfig" type="string">
+  JSON string with API-specific configuration
+</ParamField>
+
+### Response
+
+Returns the created chatflow object with a generated `id`.
+
+<Note>
+Creating chatflows may be subject to usage limits based on your subscription plan.
+</Note>
+
+## Update Chatflow
+
+Update an existing chatflow.
+
+```bash PUT /api/v1/chatflows/:id
+curl -X PUT http://localhost:3000/api/v1/chatflows/CHATFLOW_ID \
+  -H "Authorization: Bearer YOUR_JWT_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "Updated Chatflow Name",
+    "deployed": true
+  }'
+```
+
+### Path Parameters
+
+<ParamField path="id" type="string" required>
+  The unique identifier of the chatflow to update
+</ParamField>
+
+### Request Body
+
+Include only the fields you want to update. All fields from the create endpoint are supported.
+
+### Response
+
+Returns the updated chatflow object.
+
+<Info>
+Updating a chatflow's rate limiter configuration will automatically update the rate limiter instance.
+</Info>
+
+## Delete Chatflow
+
+Delete a chatflow permanently.
+
+```bash DELETE /api/v1/chatflows/:id
+curl -X DELETE http://localhost:3000/api/v1/chatflows/CHATFLOW_ID \
+  -H "Authorization: Bearer YOUR_JWT_TOKEN"
+```
+
+### Path Parameters
+
+<ParamField path="id" type="string" required>
+  The unique identifier of the chatflow to delete
+</ParamField>
+
+### Response
+
+```json
+{
+  "message": "Chatflow deleted successfully"
+}
+```
+
+<Warning>
+Deleting a chatflow is permanent and cannot be undone. All associated chat messages and history will also be deleted.
+</Warning>
+
+## Check for Changes
+
+Check if a chatflow has been modified since a specific timestamp.
+
+```bash GET /api/v1/chatflows/has-changed/:id/:lastUpdatedDateTime
+curl -X GET http://localhost:3000/api/v1/chatflows/has-changed/CHATFLOW_ID/2024-03-15T10:30:00.000Z \
+  -H "Authorization: Bearer YOUR_JWT_TOKEN"
+```
+
+### Path Parameters
+
+<ParamField path="id" type="string" required>
+  The unique identifier of the chatflow
+</ParamField>
+
+<ParamField path="lastUpdatedDateTime" type="string" required>
+  ISO 8601 timestamp to compare against
+</ParamField>
+
+### Response
+
+```json
+{
+  "hasChanged": true,
+  "lastUpdatedDate": "2024-03-15T14:20:00.000Z"
+}
+```
+
+## Code Examples
+
+<CodeGroup>
+
+```javascript JavaScript
+// List all chatflows
+const chatflows = await fetch('http://localhost:3000/api/v1/chatflows', {
+  headers: {
+    'Authorization': 'Bearer YOUR_JWT_TOKEN'
+  }
+}).then(res => res.json());
+
+// Create a new chatflow
+const newChatflow = await fetch('http://localhost:3000/api/v1/chatflows', {
+  method: 'POST',
+  headers: {
+    'Authorization': 'Bearer YOUR_JWT_TOKEN',
+    'Content-Type': 'application/json'
+  },
+  body: JSON.stringify({
+    name: 'My Chatflow',
+    flowData: JSON.stringify({ nodes: [], edges: [] }),
+    type: 'CHATFLOW'
+  })
+}).then(res => res.json());
+
+// Update a chatflow
+const updated = await fetch(`http://localhost:3000/api/v1/chatflows/${chatflowId}`, {
+  method: 'PUT',
+  headers: {
+    'Authorization': 'Bearer YOUR_JWT_TOKEN',
+    'Content-Type': 'application/json'
+  },
+  body: JSON.stringify({
+    deployed: true
+  })
+}).then(res => res.json());
+```
+
+```python Python
+import requests
+import json
+
+base_url = 'http://localhost:3000/api/v1'
+headers = {'Authorization': 'Bearer YOUR_JWT_TOKEN'}
+
+# List all chatflows
+chatflows = requests.get(
+    f'{base_url}/chatflows',
+    headers=headers
+).json()
+
+# Create a new chatflow
+new_chatflow = requests.post(
+    f'{base_url}/chatflows',
+    headers={**headers, 'Content-Type': 'application/json'},
+    json={
+        'name': 'My Chatflow',
+        'flowData': json.dumps({'nodes': [], 'edges': []}),
+        'type': 'CHATFLOW'
+    }
+).json()
+
+# Update a chatflow
+updated = requests.put(
+    f'{base_url}/chatflows/{chatflow_id}',
+    headers={**headers, 'Content-Type': 'application/json'},
+    json={'deployed': True}
+).json()
+```
+
+</CodeGroup>

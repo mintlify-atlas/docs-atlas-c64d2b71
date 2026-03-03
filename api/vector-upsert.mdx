@@ -1,0 +1,386 @@
+---
+title: 'Vector Upsert'
+description: 'Upsert documents into vector stores for retrieval-augmented generation'
+icon: 'database'
+---
+
+## Overview
+
+The Vector Upsert API allows you to add or update documents in vector stores that are used for retrieval-augmented generation (RAG). This enables you to keep your knowledge base up-to-date programmatically.
+
+<Note>
+Vector upsert endpoints require API key authentication when the chatflow has an `apikeyid` configured.
+</Note>
+
+## Upsert Vector
+
+Add or update documents in a vector store.
+
+```bash POST /api/v1/vector/upsert/:id
+curl -X POST http://localhost:3000/api/v1/vector/upsert/CHATFLOW_ID \
+  -H "Authorization: Bearer YOUR_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "text": "Flowise is an open-source low-code tool for developers to build customized LLM orchestration flows and AI agents.",
+    "metadata": {
+      "source": "documentation",
+      "category": "introduction"
+    }
+  }'
+```
+
+### Path Parameters
+
+<ParamField path="id" type="string" required>
+  The unique identifier of the chatflow containing the vector store
+</ParamField>
+
+### Request Body
+
+<ParamField body="text" type="string">
+  Text content to upsert into the vector store
+</ParamField>
+
+<ParamField body="metadata" type="object">
+  Metadata to attach to the document for filtering and retrieval
+  
+  ```json
+  {
+    "source": "documentation",
+    "category": "api",
+    "author": "John Doe",
+    "date": "2024-03-15"
+  }
+  ```
+</ParamField>
+
+<ParamField body="files" type="file[]">
+  Array of files to process and upsert (sent as multipart/form-data)
+</ParamField>
+
+<ParamField body="overrideConfig" type="object">
+  Override vector store configuration for this request
+  
+  ```json
+  {
+    "chunkSize": 1000,
+    "chunkOverlap": 200
+  }
+  ```
+</ParamField>
+
+### Response
+
+```json
+{
+  "status": "success",
+  "message": "Document upserted successfully",
+  "numAdded": 5,
+  "addedDocs": [
+    {
+      "id": "doc-uuid-1",
+      "text": "Chunk 1 of the document...",
+      "metadata": {
+        "source": "documentation",
+        "category": "introduction"
+      }
+    }
+  ]
+}
+```
+
+<ResponseField name="status" type="string">
+  Status of the operation: `success` or `error`
+</ResponseField>
+
+<ResponseField name="message" type="string">
+  Human-readable message about the operation
+</ResponseField>
+
+<ResponseField name="numAdded" type="number">
+  Number of document chunks added to the vector store
+</ResponseField>
+
+<ResponseField name="addedDocs" type="array">
+  Array of documents that were added with their IDs and metadata
+</ResponseField>
+
+## Upsert Files
+
+Upload and process files to upsert into a vector store.
+
+```bash POST /api/v1/vector/upsert/:id (with files)
+curl -X POST http://localhost:3000/api/v1/vector/upsert/CHATFLOW_ID \
+  -H "Authorization: Bearer YOUR_API_KEY" \
+  -F "files=@/path/to/document.pdf" \
+  -F "files=@/path/to/article.txt" \
+  -F "metadata={\"source\":\"upload\",\"batch\":\"2024-03\"}" 
+```
+
+### Supported File Types
+
+Flowise supports various file types depending on your chatflow configuration:
+
+- **Documents**: PDF, DOCX, TXT, MD
+- **Data**: CSV, JSON, XLSX
+- **Code**: JS, TS, PY, JAVA, CPP
+- **Web**: HTML, XML
+
+<Info>
+File processing uses the document loaders configured in your chatflow. Ensure appropriate loaders are set up for your file types.
+</Info>
+
+## Internal Upsert
+
+The internal upsert endpoint is used for administrative operations and internal workflows:
+
+```bash POST /api/v1/vector/internal-upsert/:id
+curl -X POST http://localhost:3000/api/v1/vector/internal-upsert/CHATFLOW_ID \
+  -H "Authorization: Bearer YOUR_JWT_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "text": "Internal document",
+    "metadata": {"internal": true}
+  }'
+```
+
+<Warning>
+Internal endpoints require JWT authentication and are typically used by the Flowise UI or automated workflows.
+</Warning>
+
+## Chunking Strategy
+
+Documents are automatically split into chunks before embedding. You can configure the chunking strategy:
+
+```javascript
+const response = await fetch(
+  'http://localhost:3000/api/v1/vector/upsert/CHATFLOW_ID',
+  {
+    method: 'POST',
+    headers: {
+      'Authorization': 'Bearer YOUR_API_KEY',
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({
+      text: 'Long document content...',
+      overrideConfig: {
+        chunkSize: 1000,
+        chunkOverlap: 200,
+        separators: ['\n\n', '\n', ' ']
+      }
+    })
+  }
+).then(res => res.json());
+```
+
+## Metadata Filtering
+
+Metadata enables powerful filtering during retrieval. Use descriptive metadata to improve search accuracy:
+
+<CodeGroup>
+
+```javascript JavaScript
+// Upsert with rich metadata
+await fetch('http://localhost:3000/api/v1/vector/upsert/CHATFLOW_ID', {
+  method: 'POST',
+  headers: {
+    'Authorization': 'Bearer YOUR_API_KEY',
+    'Content-Type': 'application/json'
+  },
+  body: JSON.stringify({
+    text: 'Q1 2024 financial report shows 20% growth...',
+    metadata: {
+      type: 'financial_report',
+      quarter: 'Q1',
+      year: 2024,
+      department: 'finance',
+      confidential: false,
+      tags: ['growth', 'quarterly', 'revenue']
+    }
+  })
+});
+```
+
+```python Python
+import requests
+
+# Upsert with rich metadata
+requests.post(
+    'http://localhost:3000/api/v1/vector/upsert/CHATFLOW_ID',
+    headers={
+        'Authorization': 'Bearer YOUR_API_KEY',
+        'Content-Type': 'application/json'
+    },
+    json={
+        'text': 'Q1 2024 financial report shows 20% growth...',
+        'metadata': {
+            'type': 'financial_report',
+            'quarter': 'Q1',
+            'year': 2024,
+            'department': 'finance',
+            'confidential': False,
+            'tags': ['growth', 'quarterly', 'revenue']
+        }
+    }
+)
+```
+
+</CodeGroup>
+
+## Batch Upserts
+
+For large-scale updates, batch multiple documents in a single request:
+
+```javascript
+const documents = [
+  {
+    text: 'Document 1 content...',
+    metadata: { id: 'doc1', type: 'article' }
+  },
+  {
+    text: 'Document 2 content...',
+    metadata: { id: 'doc2', type: 'article' }
+  },
+  {
+    text: 'Document 3 content...',
+    metadata: { id: 'doc3', type: 'guide' }
+  }
+];
+
+for (const doc of documents) {
+  await fetch('http://localhost:3000/api/v1/vector/upsert/CHATFLOW_ID', {
+    method: 'POST',
+    headers: {
+      'Authorization': 'Bearer YOUR_API_KEY',
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify(doc)
+  });
+  
+  // Add delay to avoid rate limiting
+  await new Promise(resolve => setTimeout(resolve, 100));
+}
+```
+
+## File Upload Example
+
+Upload multiple files with custom metadata:
+
+```javascript
+const formData = new FormData();
+
+// Add multiple files
+formData.append('files', fileInput1.files[0]);
+formData.append('files', fileInput2.files[0]);
+
+// Add metadata as JSON string
+formData.append('metadata', JSON.stringify({
+  source: 'user_upload',
+  uploadedBy: 'user@example.com',
+  timestamp: new Date().toISOString()
+}));
+
+const response = await fetch(
+  'http://localhost:3000/api/v1/vector/upsert/CHATFLOW_ID',
+  {
+    method: 'POST',
+    headers: {
+      'Authorization': 'Bearer YOUR_API_KEY'
+    },
+    body: formData
+  }
+).then(res => res.json());
+
+console.log(`Uploaded ${response.numAdded} chunks`);
+```
+
+## Rate Limiting
+
+Vector upsert operations may be rate-limited to prevent abuse:
+
+<Tip>
+Implement retry logic with exponential backoff:
+
+```javascript
+async function upsertWithRetry(data, maxRetries = 3) {
+  for (let i = 0; i < maxRetries; i++) {
+    try {
+      const response = await fetch(
+        'http://localhost:3000/api/v1/vector/upsert/CHATFLOW_ID',
+        {
+          method: 'POST',
+          headers: {
+            'Authorization': 'Bearer YOUR_API_KEY',
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(data)
+        }
+      );
+      
+      if (response.status === 429) {
+        // Rate limited, wait and retry
+        const waitTime = Math.pow(2, i) * 1000;
+        await new Promise(resolve => setTimeout(resolve, waitTime));
+        continue;
+      }
+      
+      return await response.json();
+    } catch (error) {
+      if (i === maxRetries - 1) throw error;
+    }
+  }
+}
+```
+</Tip>
+
+## Vector Store Requirements
+
+<AccordionGroup>
+  <Accordion title="Chatflow Must Have Vector Store">
+    The chatflow must be configured with a vector store node (e.g., Pinecone, Qdrant, Chroma) to accept upsert requests.
+    
+    If the chatflow doesn't have a vector store, you'll receive an error.
+  </Accordion>
+  
+  <Accordion title="Document Loaders Required for Files">
+    To upsert files, the chatflow must have appropriate document loader nodes configured.
+    
+    For example, to process PDFs, include a PDF loader node in your flow.
+  </Accordion>
+  
+  <Accordion title="Text Splitters">
+    Text splitter nodes determine how documents are chunked before embedding.
+    
+    Configure chunk size and overlap based on your use case:
+    - Technical docs: 500-1000 tokens, 100-200 overlap
+    - Articles: 1000-2000 tokens, 200-400 overlap
+    - Short Q&A: 200-500 tokens, 50-100 overlap
+  </Accordion>
+</AccordionGroup>
+
+## Error Handling
+
+<AccordionGroup>
+  <Accordion title="401 Unauthorized">
+    Missing or invalid API key.
+    
+    **Solution:** Include a valid API key in the Authorization header.
+  </Accordion>
+  
+  <Accordion title="404 Not Found">
+    Chatflow doesn't exist.
+    
+    **Solution:** Verify the chatflow ID is correct.
+  </Accordion>
+  
+  <Accordion title="500 Internal Server Error">
+    Vector store operation failed.
+    
+    **Possible causes:**
+    - Vector store credentials are invalid
+    - Network connectivity issues
+    - Vector store quota exceeded
+    
+    **Solution:** Check chatflow logs and vector store status.
+  </Accordion>
+</AccordionGroup>

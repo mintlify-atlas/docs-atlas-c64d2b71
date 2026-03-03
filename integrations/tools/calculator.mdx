@@ -1,0 +1,342 @@
+---
+title: 'Calculator Tool'
+description: 'Perform mathematical calculations in agent workflows'
+icon: 'calculator'
+---
+
+The Calculator tool enables agents to perform mathematical calculations and evaluate mathematical expressions. It's a simple but essential tool for agents that need to work with numbers.
+
+## Overview
+
+The Calculator tool uses a mathematical expression evaluator to compute results from string-based mathematical expressions. It's implemented using LangChain's `Calculator` tool and can handle basic arithmetic as well as more complex mathematical operations.
+
+<Note>
+  This tool is particularly useful when you need precise numerical calculations rather than having the LLM attempt to do math (which can be unreliable).
+</Note>
+
+## Configuration
+
+The Calculator tool has no configuration parameters. Simply add it to your agent's tool list to enable mathematical calculations.
+
+```typescript
+// No inputs required
+// The tool is ready to use immediately
+```
+
+## Usage
+
+### Adding to an Agent
+
+<Steps>
+  <Step title="Add Calculator Tool">
+    Drag the **Calculator** tool from the Tools category onto your canvas.
+  </Step>
+  
+  <Step title="Connect to Agent">
+    Connect the Calculator tool to your agent's tools input.
+    
+    Compatible agents:
+    - Tool Agent
+    - ReAct Agent
+    - Conversational Agent
+    - OpenAI Assistant
+  </Step>
+  
+  <Step title="Test">
+    Ask the agent a question requiring calculation, such as:
+    - "What is 15 multiplied by 27?"
+    - "Calculate the area of a circle with radius 5"
+    - "What's 1234 + 5678?"
+  </Step>
+</Steps>
+
+### Example Queries
+
+The agent can handle various types of mathematical questions:
+
+<CodeGroup>
+```text Basic Arithmetic
+User: What is 456 + 789?
+Agent: Let me calculate that for you.
+[Uses Calculator: 456 + 789]
+Result: 1245
+```
+
+```text Complex Expressions
+User: Calculate (15 * 8) + (100 / 4)
+Agent: I'll evaluate that expression.
+[Uses Calculator: (15 * 8) + (100 / 4)]
+Result: 145
+```
+
+```text Word Problems
+User: If I have 12 apples and buy 3 bags with 8 apples each, how many apples do I have?
+Agent: Let me calculate the total.
+[Uses Calculator: 12 + (3 * 8)]
+Result: You have 36 apples.
+```
+</CodeGroup>
+
+## Supported Operations
+
+The Calculator tool supports standard mathematical operations:
+
+<Tabs>
+  <Tab title="Basic Operations">
+    - **Addition**: `+`
+    - **Subtraction**: `-`
+    - **Multiplication**: `*`
+    - **Division**: `/`
+    - **Exponentiation**: `**` or `^`
+    - **Modulo**: `%`
+    
+    ```javascript
+    5 + 3        // 8
+    10 - 4       // 6
+    6 * 7        // 42
+    20 / 4       // 5
+    2 ** 8       // 256
+    17 % 5       // 2
+    ```
+  </Tab>
+  
+  <Tab title="Advanced Operations">
+    - **Parentheses**: For grouping
+    - **Decimal numbers**: Floating point
+    - **Negative numbers**: Unary minus
+    - **Order of operations**: PEMDAS/BODMAS
+    
+    ```javascript
+    (5 + 3) * 2     // 16
+    3.14 * 5        // 15.7
+    -10 + 5         // -5
+    2 + 3 * 4       // 14 (not 20)
+    ```
+  </Tab>
+</Tabs>
+
+## How It Works
+
+<Steps>
+  <Step title="Agent Receives Query">
+    User asks a question that requires mathematical calculation.
+  </Step>
+  
+  <Step title="Agent Recognizes Need">
+    The LLM determines that a calculation is needed to answer the question.
+  </Step>
+  
+  <Step title="Tool Selection">
+    Agent selects the Calculator tool and formats the mathematical expression.
+  </Step>
+  
+  <Step title="Expression Evaluation">
+    The calculator evaluates the expression and returns the numerical result.
+  </Step>
+  
+  <Step title="Response Generation">
+    The agent incorporates the calculation result into its response to the user.
+  </Step>
+</Steps>
+
+## Common Use Cases
+
+<CardGroup cols={2}>
+  <Card title="Financial Calculations" icon="dollar-sign">
+    Calculate prices, discounts, taxes, and totals for e-commerce or financial applications
+  </Card>
+  
+  <Card title="Unit Conversions" icon="arrows-rotate">
+    Perform numerical conversions when combined with conversion formulas
+  </Card>
+  
+  <Card title="Data Analysis" icon="chart-line">
+    Calculate statistics, percentages, and aggregations from data
+  </Card>
+  
+  <Card title="Engineering Problems" icon="ruler-combined">
+    Solve mathematical problems in technical support or engineering chatbots
+  </Card>
+</CardGroup>
+
+## Example Workflows
+
+### E-Commerce Price Calculator
+
+```text
+User: I have a cart with items costing $25, $40, and $15. 
+      With a 10% discount, what's my total?
+
+Agent Reasoning:
+1. Calculate subtotal: 25 + 40 + 15
+2. Calculate discount: subtotal * 0.10
+3. Calculate final total: subtotal - discount
+
+[Calculator: 25 + 40 + 15] → 80
+[Calculator: 80 * 0.10] → 8
+[Calculator: 80 - 8] → 72
+
+Response: Your subtotal is $80. With a 10% discount ($8), 
+          your final total is $72.
+```
+
+### Area and Perimeter Calculator
+
+```text
+User: What's the area of a rectangle that's 12 meters by 8 meters?
+
+Agent Reasoning:
+- Area of rectangle = length × width
+- Need to calculate: 12 * 8
+
+[Calculator: 12 * 8] → 96
+
+Response: The area of a 12m × 8m rectangle is 96 square meters.
+```
+
+## Best Practices
+
+<Check>
+  **When to Use the Calculator**
+  
+  - Any arithmetic or mathematical operation
+  - Precise numerical calculations
+  - Complex expressions with multiple operations
+  - Financial calculations where accuracy is critical
+  - When you need reproducible, exact results
+</Check>
+
+<Warning>
+  **Limitations**
+  
+  - **Basic math only**: No advanced functions like trigonometry or logarithms
+  - **String expressions**: Input must be a valid mathematical expression string
+  - **No variables**: Cannot store or reference variables
+  - **No symbolic math**: Evaluates to numerical results only
+</Warning>
+
+## Troubleshooting
+
+<AccordionGroup>
+  <Accordion title="Agent doesn't use the calculator">
+    **Possible causes**:
+    - Question doesn't clearly require calculation
+    - Agent attempts to do math mentally (unreliable)
+    - Calculator tool not properly connected
+    
+    **Solutions**:
+    - Rephrase question to explicitly request calculation
+    - Improve system message to encourage tool usage
+    - Verify tool is connected in the workflow
+    - Use more explicit language: "Calculate...", "What is the exact result of..."
+  </Accordion>
+  
+  <Accordion title="Calculation errors or invalid expressions">
+    **Possible causes**:
+    - Agent formatted the expression incorrectly
+    - Invalid mathematical syntax
+    
+    **Solutions**:
+    - Review agent's verbose logs to see the expression sent
+    - Update system message with examples of valid expressions
+    - Test with simpler calculations first
+  </Accordion>
+  
+  <Accordion title="Unexpected results">
+    **Possible causes**:
+    - Order of operations issue
+    - Floating point precision
+    - Agent misunderstood the problem
+    
+    **Solutions**:
+    - Check the actual expression used in verbose logs
+    - Verify parentheses are used correctly for grouping
+    - Ask the agent to show its work step-by-step
+  </Accordion>
+</AccordionGroup>
+
+## Tips for Better Results
+
+<Tip>
+  **Improve Agent Math Performance**
+  
+  1. **Be explicit**: Use phrases like "calculate exactly" or "use the calculator"
+  2. **System message**: Include instructions like "Always use the calculator tool for mathematical operations"
+  3. **Step-by-step**: For complex problems, ask the agent to break down the calculation
+  4. **Verify results**: For critical calculations, ask the agent to double-check
+</Tip>
+
+### Example System Message
+
+```text
+You are a helpful assistant with access to a calculator tool.
+When users ask mathematical questions, ALWAYS use the calculator 
+tool to ensure accurate results. Never attempt to do arithmetic 
+mentally. Show your calculations step-by-step for complex problems.
+```
+
+## Combining with Other Tools
+
+The Calculator tool works well in combination with:
+
+<CardGroup cols={2}>
+  <Card title="Web Browser" icon="globe">
+    Search for data, then calculate results
+  </Card>
+  
+  <Card title="Retriever" icon="database">
+    Retrieve numerical data, then perform calculations
+  </Card>
+  
+  <Card title="API Tools" icon="plug">
+    Fetch data from APIs and calculate aggregations
+  </Card>
+  
+  <Card title="Custom Tools" icon="wrench">
+    Create custom tools that use calculator for internal computations
+  </Card>
+</CardGroup>
+
+### Example: Web Search + Calculator
+
+```text
+User: What's the current price of Bitcoin multiplied by 100?
+
+Agent:
+1. [Web Search: "current Bitcoin price"]
+   Result: Bitcoin is currently trading at $43,250
+
+2. [Calculator: 43250 * 100]
+   Result: 4,325,000
+
+Response: The current Bitcoin price ($43,250) multiplied by 100 
+          equals $4,325,000.
+```
+
+## Alternative Tools
+
+For more advanced mathematical operations, consider:
+
+- **WolframAlpha Tool**: Access to Wolfram's computational engine for advanced math
+- **Python REPL Tool**: Execute Python code for complex calculations and data manipulation
+- **Custom Tool**: Create a custom tool wrapping specialized mathematical libraries
+
+## Related Resources
+
+<CardGroup cols={2}>
+  <Card title="Agent Overview" icon="robot" href="/integrations/agents/overview">
+    Learn about building agents with tools
+  </Card>
+  
+  <Card title="Custom Tools" icon="hammer" href="/integrations/tools/custom-tools">
+    Create tools for specialized calculations
+  </Card>
+  
+  <Card title="Tool Agent" icon="wrench">
+    Best agent for using calculator and other tools
+  </Card>
+  
+  <Card title="WolframAlpha" icon="wolf-pack-battalion">
+    Advanced mathematical and computational tool
+  </Card>
+</CardGroup>

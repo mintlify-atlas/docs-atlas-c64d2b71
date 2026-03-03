@@ -1,0 +1,353 @@
+---
+title: 'Web Browser Tool'
+description: 'Enable agents to visit websites and extract information'
+icon: 'browser'
+---
+
+The Web Browser tool gives agents the ability to visit websites, extract text content, and answer questions based on the information found on web pages.
+
+## Overview
+
+The Web Browser tool combines web page fetching with text processing and question-answering capabilities. It uses embeddings to create a searchable index of the page content, allowing the agent to efficiently find relevant information to answer queries.
+
+<Note>
+  Unlike simple web scrapers, the Web Browser tool intelligently extracts and indexes content, making it ideal for agents that need to understand and reason about web page information.
+</Note>
+
+## How It Works
+
+<Steps>
+  <Step title="Agent Determines Need">
+    The agent recognizes that it needs to visit a website to answer a user's question.
+  </Step>
+  
+  <Step title="Fetch Page Content">
+    The tool fetches the HTML content from the specified URL.
+  </Step>
+  
+  <Step title="Extract & Embed Text">
+    Text is extracted from the page and converted into embeddings for semantic search.
+  </Step>
+  
+  <Step title="Answer Question">
+    The language model queries the embedded content to find relevant information and formulates an answer.
+  </Step>
+</Steps>
+
+## Configuration
+
+<ParamField path="model" type="BaseLanguageModel" required>
+  The language model used to process the extracted content and answer questions.
+  
+  **Compatible Models**:
+  - ChatOpenAI (GPT-3.5, GPT-4)
+  - ChatAnthropic (Claude)
+  - Any BaseChatModel or BaseLanguageModel
+  
+  <Tip>
+    Use the same model as your agent for consistency, or a faster/cheaper model for efficiency.
+  </Tip>
+</ParamField>
+
+<ParamField path="embeddings" type="Embeddings" required>
+  The embedding model used to create vector representations of the web page content.
+  
+  **Compatible Embeddings**:
+  - OpenAI Embeddings
+  - HuggingFace Embeddings
+  - Cohere Embeddings
+  - Any LangChain Embeddings implementation
+  
+  <Note>
+    The embeddings enable semantic search over the page content, allowing the tool to find relevant information even when exact keywords don't match.
+  </Note>
+</ParamField>
+
+## Usage
+
+### Adding to an Agent
+
+<Steps>
+  <Step title="Add Web Browser Tool">
+    Drag the **Web Browser** tool from the Tools category onto your canvas.
+  </Step>
+  
+  <Step title="Configure Language Model">
+    Connect a language model (e.g., ChatOpenAI) to the model input.
+  </Step>
+  
+  <Step title="Configure Embeddings">
+    Connect an embeddings model (e.g., OpenAI Embeddings) to the embeddings input.
+  </Step>
+  
+  <Step title="Connect to Agent">
+    Connect the Web Browser tool to your agent's tools input.
+  </Step>
+  
+  <Step title="Test">
+    Ask the agent questions that require visiting websites:
+    - "What are the latest features on the Flowise homepage?"
+    - "Visit example.com and tell me what they do"
+    - "Browse to docs.example.com and find information about installation"
+  </Step>
+</Steps>
+
+## Example Queries
+
+<CodeGroup>
+```text Product Information
+User: Visit flowise.ai and tell me what Flowise is used for.
+
+Agent: Let me browse the Flowise website.
+[Uses Web Browser: https://flowise.ai]
+
+Response: Flowise is an open-source low-code tool for developers 
+to build customized LLM orchestration flows and AI agents. It provides 
+a drag-and-drop UI to visualize and build AI workflows...
+```
+
+```text Documentation Lookup
+User: Go to the LangChain documentation and find out how to create a custom tool.
+
+Agent: I'll check the LangChain documentation.
+[Uses Web Browser: https://python.langchain.com/docs/modules/tools/custom]
+
+Response: According to the LangChain documentation, you can create 
+a custom tool by inheriting from the BaseTool class and implementing 
+the _run method...
+```
+
+```text News and Updates
+User: What's the latest announcement on the OpenAI blog?
+
+Agent: Let me check the OpenAI blog.
+[Uses Web Browser: https://openai.com/blog]
+
+Response: The latest announcement discusses...
+```
+</CodeGroup>
+
+## Common Use Cases
+
+<CardGroup cols={2}>
+  <Card title="Research Assistant" icon="magnifying-glass">
+    Browse websites to gather information and answer research questions
+  </Card>
+  
+  <Card title="Competitor Analysis" icon="chart-mixed">
+    Visit competitor websites to extract product information and features
+  </Card>
+  
+  <Card title="Documentation Helper" icon="book">
+    Navigate documentation sites to find specific technical information
+  </Card>
+  
+  <Card title="News Aggregation" icon="newspaper">
+    Visit news sites to gather current information on topics
+  </Card>
+</CardGroup>
+
+## Capabilities and Limitations
+
+<Tabs>
+  <Tab title="What It Can Do">
+    <Check>
+      - Visit any publicly accessible URL
+      - Extract text content from web pages
+      - Answer questions based on page content
+      - Handle multiple URLs in a conversation
+      - Understand context and semantics through embeddings
+    </Check>
+  </Tab>
+  
+  <Tab title="Limitations">
+    <Warning>
+      - **No JavaScript Execution**: Cannot handle JavaScript-rendered content
+      - **Static Content Only**: Fetches the initial HTML response
+      - **No Authentication**: Cannot access pages requiring login
+      - **Rate Limiting**: Respect website rate limits and robots.txt
+      - **No File Downloads**: Cannot download PDFs, images, or other files
+      - **Text Content Only**: Ignores images, videos, and other media
+    </Warning>
+  </Tab>
+</Tabs>
+
+## Performance Considerations
+
+<Tip>
+  **Optimization Tips**
+  
+  - **Model Selection**: Use a faster, cheaper model for the Web Browser tool if budget is a concern
+  - **Embedding Model**: Choose efficient embeddings (e.g., OpenAI text-embedding-ada-002)
+  - **Caching**: Results are not automatically cached; consider implementing caching for frequently accessed pages
+  - **Token Costs**: Each page visit consumes tokens for both embedding and question-answering
+</Tip>
+
+## Example Workflows
+
+### Research Agent with Web Browser
+
+```typescript
+// Workflow Components:
+// 1. ChatOpenAI (GPT-4) - Main agent model
+// 2. ChatOpenAI (GPT-3.5-Turbo) - Web Browser model (cheaper)
+// 3. OpenAI Embeddings - For content indexing
+// 4. Web Browser Tool - Configured with models above
+// 5. Tool Agent - With Web Browser in tools array
+// 6. Buffer Memory - To maintain conversation context
+
+// The agent can now:
+// - Visit websites based on user requests
+// - Answer questions about web page content
+// - Compare information across multiple pages
+// - Maintain context across multiple web visits
+```
+
+### Multi-Tool Research Agent
+
+```typescript
+// Combine Web Browser with other tools:
+// - Calculator: For numerical analysis of found data
+// - Retriever: For internal knowledge base
+// - Web Browser: For external information
+
+// Example conversation:
+// User: "Find the current price of Bitcoin and calculate what 5 BTC would be worth"
+// Agent: 
+//   1. [Web Browser: Visit crypto price site]
+//   2. [Calculator: price * 5]
+//   3. Return combined result
+```
+
+## Troubleshooting
+
+<AccordionGroup>
+  <Accordion title="Empty or missing content from web pages">
+    **Possible Causes**:
+    - Page uses JavaScript to load content
+    - Page blocks automated access (bot detection)
+    - URL is incorrect or inaccessible
+    
+    **Solutions**:
+    - For JS-heavy sites, use a Puppeteer or Playwright-based approach instead
+    - Verify the URL is correct and publicly accessible
+    - Check if the site has an API that provides the data
+    - Test the URL in a regular browser first
+  </Accordion>
+  
+  <Accordion title="Agent doesn't use the Web Browser tool">
+    **Possible Causes**:
+    - Question doesn't clearly indicate need for web browsing
+    - Agent tries to answer from its training data
+    - Tool not properly connected
+    
+    **Solutions**:
+    - Use explicit language: "Browse to...", "Visit...", "Check the website..."
+    - Update system message to encourage web browsing for current information
+    - Verify tool connections in the workflow
+  </Accordion>
+  
+  <Accordion title="Incorrect or hallucinated information">
+    **Possible Causes**:
+    - LLM generates answer beyond what's on the page
+    - Embeddings didn't capture relevant information
+    - Content on page is ambiguous
+    
+    **Solutions**:
+    - Use a more capable language model for the Web Browser
+    - Improve system message to emphasize accuracy
+    - Ask agent to cite specific parts of the page
+    - Cross-reference with multiple sources
+  </Accordion>
+  
+  <Accordion title="Slow performance">
+    **Possible Causes**:
+    - Large web pages take time to process
+    - Embedding generation is slow
+    - Multiple tool calls in sequence
+    
+    **Solutions**:
+    - Use faster embedding models
+    - Implement caching for frequently accessed pages
+    - Consider using a dedicated web scraper for specific sites
+  </Accordion>
+</AccordionGroup>
+
+## Best Practices
+
+<Check>
+  **Recommended Practices**
+  
+  1. **Specific URLs**: Encourage users to provide or agents to construct specific URLs rather than generic domains
+  2. **System Instructions**: Guide the agent on when to use web browsing vs. its own knowledge
+  3. **Citation**: Ask the agent to cite sources and URLs in its responses
+  4. **Verification**: For critical information, cross-reference multiple sources
+  5. **Respect Limits**: Honor robots.txt and implement rate limiting
+</Check>
+
+### Example System Message
+
+```text
+You are a research assistant with access to web browsing capabilities.
+When users ask about current events, specific websites, or information 
+that may have changed recently, use the Web Browser tool to visit relevant 
+websites and extract accurate information.
+
+Always cite the URL you visited when providing information from websites.
+If you cannot find information on a page, clearly state that rather than 
+guessing or using your training data.
+```
+
+## Security Considerations
+
+<Warning>
+  **Security Best Practices**
+  
+  - **URL Validation**: Validate URLs before visiting to prevent SSRF attacks
+  - **Content Filtering**: Be cautious with user-provided URLs
+  - **Rate Limiting**: Implement rate limits to prevent abuse
+  - **Sensitive Data**: Don't visit URLs containing sensitive credentials
+  - **Cost Control**: Monitor usage to prevent excessive API costs
+</Warning>
+
+## Alternatives and Related Tools
+
+For different web access needs, consider:
+
+<CardGroup cols={2}>
+  <Card title="Cheerio Scraper" icon="spider-web">
+    For document loading and bulk scraping (not real-time agent use)
+  </Card>
+  
+  <Card title="Puppeteer Scraper" icon="chrome">
+    For JavaScript-heavy websites requiring browser execution
+  </Card>
+  
+  <Card title="Web Search APIs" icon="magnifying-glass">
+    Google, Brave, or Serper for search-based information retrieval
+  </Card>
+  
+  <Card title="API Tools" icon="plug">
+    Direct API access for structured data from specific services
+  </Card>
+</CardGroup>
+
+## Related Resources
+
+<CardGroup cols={2}>
+  <Card title="Tool Agent" icon="wrench">
+    Learn how to build agents that use multiple tools
+  </Card>
+  
+  <Card title="Custom Tools" icon="hammer" href="/integrations/tools/custom-tools">
+    Create specialized web scraping tools
+  </Card>
+  
+  <Card title="Search Tools" icon="magnifying-glass">
+    Explore web search alternatives
+  </Card>
+  
+  <Card title="Agent Overview" icon="robot" href="/integrations/agents/overview">
+    Understand agent fundamentals
+  </Card>
+</CardGroup>

@@ -1,0 +1,248 @@
+---
+title: 'PDF Document Loader'
+description: 'Load and extract text from PDF files in Flowise'
+icon: 'file-pdf'
+---
+
+The PDF Document Loader allows you to extract text content from PDF files and convert them into structured documents for use in your Flowise workflows.
+
+## Overview
+
+This loader uses the LangChain `PDFLoader` to parse PDF files and extract their text content. It supports both single and multiple file uploads, with options to process PDFs page-by-page or as a single document.
+
+## Configuration
+
+<ParamField path="pdfFile" type="file" required>
+  The PDF file(s) to load. Supports both file upload and file storage references.
+  
+  **File Type**: `.pdf`
+</ParamField>
+
+<ParamField path="textSplitter" type="TextSplitter" optional>
+  Optional text splitter to chunk the extracted text into smaller pieces. Useful for processing large PDFs with LLMs that have token limits.
+</ParamField>
+
+<ParamField path="usage" type="options" default="perPage">
+  Controls how the PDF is processed:
+  
+  <Expandable title="Options">
+    - **One document per page** (`perPage`): Creates a separate document for each page in the PDF. Recommended for most use cases as it preserves page-level metadata.
+    - **One document per file** (`perFile`): Creates a single document containing all pages. Useful when you want to maintain document context across pages.
+  </Expandable>
+</ParamField>
+
+### Advanced Parameters
+
+<ParamField path="legacyBuild" type="boolean" optional>
+  Enable legacy PDF.js build for compatibility with older or problematic PDF files.
+  
+  <Note>
+    Use this option if you encounter errors with certain PDF files that don't parse correctly with the standard build.
+  </Note>
+</ParamField>
+
+<ParamField path="metadata" type="json" optional>
+  Additional metadata to attach to extracted documents.
+  
+  ```json
+  {
+    "source": "company_handbook",
+    "category": "HR",
+    "version": "2024"
+  }
+  ```
+</ParamField>
+
+<ParamField path="omitMetadataKeys" type="string" optional>
+  Comma-separated list of default metadata keys to exclude from the output.
+  
+  **Example**: `pdf.version, pdf.info.Creator`
+  
+  **Special value**: Use `*` to omit all default metadata and only include your custom metadata.
+</ParamField>
+
+## Output
+
+The PDF loader provides two output types:
+
+<Tabs>
+  <Tab title="Document">
+    Returns an array of document objects with metadata and page content.
+    
+    ```json
+    [
+      {
+        "pageContent": "This is the content of page 1...",
+        "metadata": {
+          "source": "blob",
+          "pdf": {
+            "version": "1.10.100",
+            "info": {
+              "PDFFormatVersion": "1.4",
+              "IsAcroFormPresent": false,
+              "IsXFAPresent": false,
+              "Title": "Document Title"
+            },
+            "metadata": null,
+            "totalPages": 10
+          },
+          "loc": {
+            "pageNumber": 1
+          }
+        }
+      },
+      {
+        "pageContent": "This is the content of page 2...",
+        "metadata": {
+          "source": "blob",
+          "loc": {
+            "pageNumber": 2
+          }
+        }
+      }
+    ]
+    ```
+  </Tab>
+  
+  <Tab title="Text">
+    Returns concatenated text from all pages as a single string.
+    
+    ```text
+    This is the content of page 1...
+    This is the content of page 2...
+    This is the content of page 3...
+    ```
+  </Tab>
+</Tabs>
+
+## Usage Examples
+
+### Basic PDF Loading
+
+<Steps>
+  <Step title="Add PDF Loader Node">
+    Drag the **PDF File** node from the Document Loaders category onto your canvas.
+  </Step>
+  
+  <Step title="Upload PDF">
+    Click on the file input and select your PDF file(s) to upload.
+  </Step>
+  
+  <Step title="Configure Processing Mode">
+    Choose between "One document per page" or "One document per file" based on your needs.
+  </Step>
+  
+  <Step title="Connect to Downstream Nodes">
+    Connect the PDF loader output to vector stores, text splitters, or other processing nodes.
+  </Step>
+</Steps>
+
+### With Text Splitting
+
+<CodeGroup>
+```typescript Example Flow
+// Connect nodes in this order:
+// 1. PDF File Loader
+// 2. Recursive Character Text Splitter (chunk size: 1000)
+// 3. Pinecone Vector Store
+// 4. Conversational Retrieval Chain
+
+// The text splitter will automatically chunk the PDF content
+// into manageable pieces for embedding and retrieval
+```
+</CodeGroup>
+
+<Note>
+  When using text splitters with PDFs, consider setting the chunk size based on your LLM's context window and the complexity of your PDF content.
+</Note>
+
+### Processing Multiple PDFs
+
+You can upload multiple PDF files at once. Each file will be processed according to the selected usage mode:
+
+- **Per Page Mode**: If you upload 3 PDFs with 5 pages each, you'll get 15 documents (one per page)
+- **Per File Mode**: If you upload 3 PDFs, you'll get 3 documents (one per file)
+
+### Adding Custom Metadata
+
+```json
+{
+  "department": "Engineering",
+  "document_type": "Technical Specification",
+  "reviewed_by": "John Doe",
+  "review_date": "2024-01-15"
+}
+```
+
+This metadata will be merged with the default PDF metadata for all extracted documents.
+
+## Common Use Cases
+
+<CardGroup cols={2}>
+  <Card title="Document Q&A" icon="messages-question">
+    Load PDFs into a vector store to enable question-answering over your documents
+  </Card>
+  
+  <Card title="Research Papers" icon="file-magnifying-glass">
+    Extract and index academic papers for semantic search and retrieval
+  </Card>
+  
+  <Card title="Manual Processing" icon="book">
+    Parse technical manuals and handbooks for support chatbots
+  </Card>
+  
+  <Card title="Contract Analysis" icon="file-contract">
+    Extract text from legal documents for analysis and comparison
+  </Card>
+</CardGroup>
+
+## Troubleshooting
+
+<AccordionGroup>
+  <Accordion title="PDF fails to parse">
+    Try enabling the **Legacy Build** option in advanced parameters. Some PDFs use older formats or non-standard encodings that require the legacy PDF.js build.
+  </Accordion>
+  
+  <Accordion title="Missing text from scanned PDFs">
+    The PDF loader extracts text that is already embedded in the PDF. For scanned documents (images of text), you'll need to use OCR (Optical Character Recognition) preprocessing before loading the PDF.
+  </Accordion>
+  
+  <Accordion title="Memory errors with large PDFs">
+    For very large PDF files:
+    1. Use "One document per page" mode
+    2. Add a text splitter to chunk the content
+    3. Consider processing the PDF in batches if it has hundreds of pages
+  </Accordion>
+  
+  <Accordion title="Incorrect page numbers in metadata">
+    Page numbers in the `loc.pageNumber` metadata field are 1-indexed (starting from 1), matching the visual page numbers in PDF readers.
+  </Accordion>
+</AccordionGroup>
+
+## Best Practices
+
+<Warning>
+  **Performance Considerations**
+  - Large PDFs (>100 pages) can take significant time to process
+  - Processing per-page creates more documents but preserves page context
+  - Always use text splitters when feeding content to LLMs to stay within token limits
+</Warning>
+
+<Tip>
+  **Optimization Tips**
+  - Use per-page mode when page boundaries are meaningful (e.g., books, reports)
+  - Use per-file mode when document flow across pages is important (e.g., contracts)
+  - Add source tracking metadata to help identify content origin during retrieval
+</Tip>
+
+## Related Resources
+
+<CardGroup cols={2}>
+  <Card title="Vector Stores" icon="database" href="/integrations/vector-stores/pinecone">
+    Store PDF content for semantic search
+  </Card>
+  
+  <Card title="Document Loaders" icon="file-arrow-down" href="/integrations/document-loaders/overview">
+    Explore other document loader types
+  </Card>
+</CardGroup>

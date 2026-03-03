@@ -1,0 +1,191 @@
+---
+title: 'Document Loaders Overview'
+description: 'Learn how to load data from various sources into Flowise'
+icon: 'file-arrow-down'
+---
+
+Document Loaders are essential components in Flowise that enable you to load and process data from various sources. They transform raw data into a structured format that can be used by LLMs and vector stores.
+
+## What are Document Loaders?
+
+Document Loaders extract content from different file types and sources, converting them into `Document` objects that contain:
+- **pageContent**: The extracted text content
+- **metadata**: Information about the source (filename, page number, URL, etc.)
+
+## Available Document Loaders
+
+Flowise supports a wide variety of document loaders across different categories:
+
+### File-Based Loaders
+
+<CardGroup cols={2}>
+  <Card title="PDF File" icon="file-pdf" href="/integrations/document-loaders/pdf">
+    Load and extract text from PDF documents
+  </Card>
+  <Card title="Text File" icon="file-lines" href="/integrations/document-loaders/text">
+    Load text-based files including .txt, .md, .html, and code files
+  </Card>
+  <Card title="File Loader" icon="file">
+    Generic loader supporting multiple file types (PDF, DOCX, CSV, JSON, etc.)
+  </Card>
+  <Card title="CSV" icon="file-csv">
+    Load and parse CSV files into documents
+  </Card>
+</CardGroup>
+
+### Web-Based Loaders
+
+<CardGroup cols={2}>
+  <Card title="Cheerio Web Scraper" icon="spider-web" href="/integrations/document-loaders/web">
+    Scrape and extract content from web pages using CSS selectors
+  </Card>
+  <Card title="Puppeteer Web Scraper" icon="chrome">
+    Advanced web scraping with JavaScript execution support
+  </Card>
+  <Card title="Playwright" icon="browser">
+    Cross-browser web scraping with full page rendering
+  </Card>
+  <Card title="FireCrawl" icon="fire">
+    Modern web scraping and crawling service
+  </Card>
+</CardGroup>
+
+### Cloud Storage Loaders
+
+<CardGroup cols={2}>
+  <Card title="Google Drive" icon="google-drive">
+    Load files from Google Drive
+  </Card>
+  <Card title="S3 File" icon="aws">
+    Load files from Amazon S3 buckets
+  </Card>
+  <Card title="S3 Directory" icon="aws">
+    Load multiple files from S3 directories
+  </Card>
+</CardGroup>
+
+### Productivity Tool Loaders
+
+<CardGroup cols={2}>
+  <Card title="Notion" icon="n">
+    Load pages, databases, and folders from Notion
+  </Card>
+  <Card title="Confluence" icon="confluence">
+    Load content from Atlassian Confluence
+  </Card>
+  <Card title="Jira" icon="jira">
+    Load issues and project data from Jira
+  </Card>
+  <Card title="Airtable" icon="table">
+    Load records from Airtable bases
+  </Card>
+</CardGroup>
+
+### Microsoft Office Loaders
+
+<CardGroup cols={3}>
+  <Card title="Word" icon="file-word">
+    Load .doc and .docx files
+  </Card>
+  <Card title="Excel" icon="file-excel">
+    Load spreadsheet data
+  </Card>
+  <Card title="PowerPoint" icon="file-powerpoint">
+    Load presentation content
+  </Card>
+</CardGroup>
+
+## Common Configuration Options
+
+Most document loaders share these common configuration options:
+
+<ParamField path="textSplitter" type="TextSplitter" optional>
+  Optional text splitter to chunk documents into smaller pieces for processing
+</ParamField>
+
+<ParamField path="metadata" type="json" optional>
+  Additional metadata to attach to all extracted documents
+  
+  ```json
+  {
+    "source": "internal_docs",
+    "department": "engineering"
+  }
+  ```
+</ParamField>
+
+<ParamField path="omitMetadataKeys" type="string" optional>
+  Comma-separated list of metadata keys to exclude from the output. Use `*` to omit all default metadata keys except those specified in Additional Metadata.
+  
+  Example: `key1, key2, key3.nestedKey1`
+</ParamField>
+
+## Output Options
+
+Document loaders typically provide two output types:
+
+<Steps>
+  <Step title="Document Output">
+    Returns an array of document objects with metadata and pageContent. Use this when you need to preserve document structure and metadata.
+    
+    ```json
+    [
+      {
+        "pageContent": "This is the text content...",
+        "metadata": {
+          "source": "document.pdf",
+          "page": 1
+        }
+      }
+    ]
+    ```
+  </Step>
+  
+  <Step title="Text Output">
+    Returns concatenated text from all documents. Use this for simple text processing workflows.
+    
+    ```text
+    This is the text content from page 1...
+    This is the text content from page 2...
+    ```
+  </Step>
+</Steps>
+
+## Best Practices
+
+<Note>
+  **Performance Tips**
+  - Use text splitters to chunk large documents for better LLM processing
+  - Set appropriate limits when crawling websites to avoid long processing times
+  - Use metadata to track document sources for better retrieval
+</Note>
+
+<Warning>
+  **Important Considerations**
+  - Large files may take significant time to process
+  - Some loaders require API keys or authentication credentials
+  - Web scraping should respect robots.txt and website terms of service
+</Warning>
+
+## Using Document Loaders in Workflows
+
+Document loaders are typically used in these scenarios:
+
+1. **RAG (Retrieval Augmented Generation)**: Load documents to create a knowledge base
+2. **Data Ingestion**: Import data from various sources into vector stores
+3. **Content Processing**: Extract and transform content for analysis
+4. **Knowledge Base Creation**: Build searchable document repositories
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="PDF Loader" icon="file-pdf" href="/integrations/document-loaders/pdf">
+    Learn how to load PDF documents
+  </Card>
+  <Card title="Web Scraper" icon="globe" href="/integrations/document-loaders/web">
+    Extract content from websites
+  </Card>
+  <Card title="Vector Stores" icon="database" href="/integrations/vector-stores/pinecone">
+    Store and search documents
+  </Card>
+</CardGroup>

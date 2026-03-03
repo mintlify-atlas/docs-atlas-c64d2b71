@@ -1,0 +1,242 @@
+---
+title: 'Authentication'
+description: 'Learn how to authenticate API requests using API keys and JWT tokens'
+icon: 'shield-halved'
+---
+
+## Overview
+
+Flowise supports two authentication methods:
+
+1. **API Keys** - For programmatic access to predictions and vector operations
+2. **JWT Tokens** - For authenticated admin operations on chatflows, credentials, and tools
+
+## API Key Authentication
+
+API keys are used to authenticate requests to public-facing endpoints like predictions and vector upsert operations.
+
+### Creating an API Key
+
+Create an API key through the Flowise UI or via the API:
+
+```bash
+curl -X POST http://localhost:3000/api/v1/apikey \
+  -H "Authorization: Bearer YOUR_JWT_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "keyName": "Production Key",
+    "permissions": ["chatflows:read", "predictions:create"]
+  }'
+```
+
+**Response:**
+```json
+{
+  "id": "key_abc123",
+  "apiKey": "sk_xxxxxxxxxxxxxxxxxxxxx",
+  "apiSecret": "sk_xxxxxxxxxxxxxxxxxxxxx",
+  "keyName": "Production Key",
+  "permissions": ["chatflows:read", "predictions:create"],
+  "workspaceId": "workspace-id",
+  "updatedDate": "2024-03-15T10:30:00.000Z"
+}
+```
+
+<Warning>
+The `apiSecret` is only shown once during creation. Store it securely - you won't be able to retrieve it again.
+</Warning>
+
+### Using API Keys
+
+Include the API key in the `Authorization` header as a Bearer token:
+
+```bash
+curl -X POST http://localhost:3000/api/v1/prediction/CHATFLOW_ID \
+  -H "Authorization: Bearer YOUR_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{"question": "Hello!"}'
+```
+
+<CodeGroup>
+
+```javascript JavaScript
+const response = await fetch(
+  'http://localhost:3000/api/v1/prediction/CHATFLOW_ID',
+  {
+    method: 'POST',
+    headers: {
+      'Authorization': 'Bearer YOUR_API_KEY',
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({ question: 'Hello!' })
+  }
+);
+```
+
+```python Python
+import requests
+
+response = requests.post(
+    'http://localhost:3000/api/v1/prediction/CHATFLOW_ID',
+    headers={
+        'Authorization': 'Bearer YOUR_API_KEY',
+        'Content-Type': 'application/json'
+    },
+    json={'question': 'Hello!'}
+)
+```
+
+</CodeGroup>
+
+### API Key Permissions
+
+API keys support granular permissions:
+
+- `chatflows:create` - Create new chatflows
+- `chatflows:read` / `chatflows:view` - Read chatflow data
+- `chatflows:update` - Update chatflows
+- `chatflows:delete` - Delete chatflows
+- `predictions:create` - Execute predictions
+- `credentials:create` - Create credentials
+- `credentials:view` - View credentials
+- `credentials:update` - Update credentials
+- `credentials:delete` - Delete credentials
+- `tools:create` - Create tools
+- `tools:view` - View tools
+- `tools:update` - Update tools
+- `tools:delete` - Delete tools
+
+### Chatflow-Specific API Keys
+
+You can bind an API key to a specific chatflow by setting the `apikeyid` field on the chatflow. When configured, only requests with that API key can access the chatflow.
+
+## JWT Token Authentication
+
+JWT tokens are used for authenticated admin operations. Tokens are obtained through the login process and should be included in the Authorization header.
+
+### Obtaining a JWT Token
+
+Login through the authentication endpoint:
+
+```bash
+curl -X POST http://localhost:3000/api/v1/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{
+    "username": "admin@example.com",
+    "password": "your-password"
+  }'
+```
+
+**Response:**
+```json
+{
+  "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+  "refreshToken": "refresh_token_here",
+  "user": {
+    "id": "user-id",
+    "email": "admin@example.com",
+    "activeWorkspaceId": "workspace-id",
+    "activeOrganizationId": "org-id"
+  }
+}
+```
+
+### Using JWT Tokens
+
+Include the JWT token in the Authorization header:
+
+```bash
+curl -X GET http://localhost:3000/api/v1/chatflows \
+  -H "Authorization: Bearer YOUR_JWT_TOKEN"
+```
+
+### Token Refresh
+
+JWT tokens expire after a set period. Use the refresh token to obtain a new access token:
+
+```bash
+curl -X POST http://localhost:3000/api/v1/auth/refreshToken \
+  -H "Content-Type: application/json" \
+  -d '{"refreshToken": "YOUR_REFRESH_TOKEN"}'
+```
+
+## Managing API Keys
+
+### List All API Keys
+
+```bash
+curl -X GET http://localhost:3000/api/v1/apikey \
+  -H "Authorization: Bearer YOUR_JWT_TOKEN"
+```
+
+### Update an API Key
+
+```bash
+curl -X PUT http://localhost:3000/api/v1/apikey/KEY_ID \
+  -H "Authorization: Bearer YOUR_JWT_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "keyName": "Updated Key Name",
+    "permissions": ["chatflows:read"]
+  }'
+```
+
+### Delete an API Key
+
+```bash
+curl -X DELETE http://localhost:3000/api/v1/apikey/KEY_ID \
+  -H "Authorization: Bearer YOUR_JWT_TOKEN"
+```
+
+### Verify an API Key
+
+```bash
+curl -X GET http://localhost:3000/api/v1/verify/apikey/YOUR_API_KEY
+```
+
+## Security Best Practices
+
+<AccordionGroup>
+  <Accordion title="Store API Keys Securely">
+    Never commit API keys to version control. Use environment variables or secure secret management systems.
+    
+    ```bash
+    export FLOWISE_API_KEY="sk_xxxxxxxxxxxxxxxxxxxxx"
+    ```
+  </Accordion>
+  
+  <Accordion title="Use Different Keys for Different Environments">
+    Create separate API keys for development, staging, and production environments.
+  </Accordion>
+  
+  <Accordion title="Apply Principle of Least Privilege">
+    Grant only the minimum permissions required for each API key.
+  </Accordion>
+  
+  <Accordion title="Rotate Keys Regularly">
+    Periodically delete old keys and create new ones to limit exposure from potential compromises.
+  </Accordion>
+  
+  <Accordion title="Monitor API Key Usage">
+    Track which keys are being used and revoke any that show suspicious activity.
+  </Accordion>
+</AccordionGroup>
+
+## Workspace Isolation
+
+API keys and JWT tokens are scoped to workspaces. Each request is validated against the workspace associated with the API key or authenticated user. This ensures data isolation between different workspaces.
+
+## Public vs Authenticated Endpoints
+
+Some endpoints are public and only require API key authentication:
+
+- `POST /api/v1/prediction/:id` - Execute predictions
+- `POST /api/v1/vector/upsert/:id` - Upsert vectors
+- `GET /api/v1/public-chatflows/:id` - Get public chatflow
+
+Other endpoints require JWT authentication:
+
+- All chatflow management endpoints
+- All credential management endpoints  
+- All tool management endpoints
+- API key management endpoints

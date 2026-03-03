@@ -1,0 +1,342 @@
+---
+title: 'Agents Overview'
+description: 'Build autonomous AI agents that can use tools and make decisions'
+icon: 'robot'
+---
+
+Agents are advanced AI systems that can reason, plan, and use tools to accomplish complex tasks. In Flowise, agents combine large language models with tools to create autonomous systems that can break down problems and execute multi-step solutions.
+
+## What are Agents?
+
+Agents are LLM-powered systems that can:
+- **Reason** about problems and decide which actions to take
+- **Use Tools** to interact with external systems and APIs
+- **Maintain Memory** of previous interactions and context
+- **Iterate** on solutions until a task is complete
+
+<Note>
+  Unlike simple LLM chains that follow a predetermined path, agents dynamically decide their next action based on previous results and the current context.
+</Note>
+
+## How Agents Work
+
+<Steps>
+  <Step title="Receive Input">
+    The agent receives a user query or task.
+  </Step>
+  
+  <Step title="Reason & Plan">
+    The LLM analyzes the input and determines which tool(s) to use.
+  </Step>
+  
+  <Step title="Execute Action">
+    The agent calls the selected tool with appropriate parameters.
+  </Step>
+  
+  <Step title="Observe Result">
+    The tool's output is returned to the agent.
+  </Step>
+  
+  <Step title="Decide Next Step">
+    The agent decides whether to:
+    - Use another tool
+    - Return a final answer
+    - Ask for clarification
+  </Step>
+</Steps>
+
+This loop continues until the agent reaches a conclusion or hits a maximum iteration limit.
+
+## Available Agents
+
+Flowise provides several agent types, each optimized for different use cases:
+
+### LangChain Agents
+
+<CardGroup cols={2}>
+  <Card title="Tool Agent" icon="wrench">
+    Modern agent using function calling for reliable tool execution
+  </Card>
+  
+  <Card title="ReAct Agent (Chat)" icon="comments">
+    Chat-optimized agent using the ReAct (Reasoning + Acting) framework
+  </Card>
+  
+  <Card title="ReAct Agent (LLM)" icon="brain">
+    Traditional ReAct agent for completion-based models
+  </Card>
+  
+  <Card title="Conversational Agent" icon="message">
+    Agent optimized for natural conversations with tool access
+  </Card>
+</CardGroup>
+
+### Specialized Agents
+
+<CardGroup cols={2}>
+  <Card title="OpenAI Assistant" icon="openai">
+    Use OpenAI's Assistants API with built-in tools
+  </Card>
+  
+  <Card title="XML Agent" icon="code">
+    Claude-optimized agent using XML formatting
+  </Card>
+  
+  <Card title="CSV Agent" icon="table">
+    Specialized agent for querying and analyzing CSV data
+  </Card>
+  
+  <Card title="Retrieval Agent" icon="database">
+    Agent with built-in document retrieval capabilities
+  </Card>
+</CardGroup>
+
+### Autonomous Agents
+
+<CardGroup cols={2}>
+  <Card title="AutoGPT" icon="robot">
+    Autonomous agent that can plan and execute complex tasks
+  </Card>
+  
+  <Card title="BabyAGI" icon="baby">
+    Task-driven autonomous agent with goal decomposition
+  </Card>
+</CardGroup>
+
+### LlamaIndex Agents
+
+<CardGroup cols={2}>
+  <Card title="OpenAI Tool Agent" icon="openai">
+    LlamaIndex agent optimized for OpenAI models
+  </Card>
+  
+  <Card title="Anthropic Agent" icon="message-bot">
+    LlamaIndex agent optimized for Claude models
+  </Card>
+</CardGroup>
+
+## Core Components
+
+Every agent in Flowise requires these core components:
+
+<ParamField path="model" type="BaseChatModel" required>
+  The language model that powers the agent's reasoning.
+  
+  **Supported Models**:
+  - ChatOpenAI (GPT-3.5, GPT-4)
+  - ChatAnthropic (Claude)
+  - ChatGoogleGenerativeAI (Gemini)
+  - Other compatible chat models
+</ParamField>
+
+<ParamField path="tools" type="Tool[]" required>
+  Array of tools the agent can use to accomplish tasks.
+  
+  **Examples**: Calculator, Web Browser, API tools, Custom tools
+</ParamField>
+
+<ParamField path="memory" type="BaseChatMemory" required>
+  Memory system to maintain conversation history and context.
+  
+  **Types**: Buffer Memory, Summary Memory, Entity Memory
+</ParamField>
+
+### Optional Parameters
+
+<ParamField path="maxIterations" type="number" optional>
+  Maximum number of tool calls the agent can make.
+  
+  **Default**: Varies by agent type
+  
+  **Tip**: Set this to prevent infinite loops in complex scenarios
+</ParamField>
+
+<ParamField path="systemMessage" type="string" optional>
+  Instructions that define the agent's personality and behavior.
+  
+  ```text
+  You are a helpful research assistant. You have access to web search 
+  and calculation tools. Always cite your sources when providing information.
+  ```
+</ParamField>
+
+## Agent Frameworks Explained
+
+### ReAct (Reasoning + Acting)
+
+The ReAct framework alternates between reasoning and acting:
+
+```
+Thought: I need to search for information about Flowise
+Action: web_search
+Action Input: "Flowise AI workflow tool"
+Observation: Flowise is an open-source UI visual tool...
+Thought: Now I have the information needed
+Final Answer: Flowise is an open-source UI visual tool...
+```
+
+**Best for**: General-purpose tasks, clear reasoning trails
+
+### Function Calling (Tool Agent)
+
+Modern agents use native function calling APIs:
+
+```json
+{
+  "tool_calls": [
+    {
+      "name": "calculator",
+      "arguments": {"expression": "15 * 7"}
+    }
+  ]
+}
+```
+
+**Best for**: Reliable tool execution, structured outputs
+
+### XML Format (Claude)
+
+Claude-optimized agents use XML for structured thinking:
+
+```xml
+<thinking>
+  I need to calculate the result first
+</thinking>
+<function_calls>
+  <invoke name="calculator">
+    <expression>15 * 7</expression>
+  </invoke>
+</function_calls>
+```
+
+**Best for**: Complex reasoning with Claude models
+
+## Common Use Cases
+
+<AccordionGroup>
+  <Accordion title="Research Assistant" icon="magnifying-glass">
+    **Tools**: Web Search, Calculator, Document Retrieval
+    
+    **Example Tasks**:
+    - Answer questions by searching the web
+    - Perform calculations on found data
+    - Retrieve relevant documents from a knowledge base
+    
+    **Recommended Agent**: Tool Agent or ReAct Agent
+  </Accordion>
+  
+  <Accordion title="Data Analysis" icon="chart-line">
+    **Tools**: CSV Query, Calculator, Plotting Tool
+    
+    **Example Tasks**:
+    - Query CSV files to extract insights
+    - Perform statistical calculations
+    - Generate visualizations
+    
+    **Recommended Agent**: CSV Agent or Tool Agent
+  </Accordion>
+  
+  <Accordion title="Customer Support" icon="headset">
+    **Tools**: Knowledge Base Retrieval, Ticket API, Email Tool
+    
+    **Example Tasks**:
+    - Answer questions from documentation
+    - Create support tickets
+    - Send follow-up emails
+    
+    **Recommended Agent**: Conversational Retrieval Agent
+  </Accordion>
+  
+  <Accordion title="Task Automation" icon="gears">
+    **Tools**: API integrations, File operations, Notifications
+    
+    **Example Tasks**:
+    - Automate multi-step workflows
+    - Integrate with external systems
+    - Send notifications based on conditions
+    
+    **Recommended Agent**: AutoGPT or BabyAGI
+  </Accordion>
+</AccordionGroup>
+
+## Best Practices
+
+<Check>
+  **Agent Design Tips**
+  
+  1. **Clear Instructions**: Provide detailed system messages that explain the agent's role
+  2. **Appropriate Tools**: Give agents only the tools they need for their task
+  3. **Set Limits**: Use maxIterations to prevent runaway costs
+  4. **Test Thoroughly**: Agents can be unpredictable; test with various inputs
+  5. **Monitor Usage**: Track tool calls and token consumption
+</Check>
+
+<Warning>
+  **Common Pitfalls**
+  
+  - **Too Many Tools**: Agents perform better with focused tool sets (5-10 tools max)
+  - **Vague Instructions**: Unclear system messages lead to poor decisions
+  - **No Guardrails**: Always set maxIterations to prevent infinite loops
+  - **Wrong Agent Type**: Match the agent framework to your LLM (e.g., XML Agent for Claude)
+</Warning>
+
+## Agent vs Chain: When to Use What
+
+| Use Agents When | Use Chains When |
+|----------------|----------------|
+| Task requires dynamic decision-making | Workflow is predictable and linear |
+| Multiple tools needed | Single operation needed |
+| Solution path is unclear | You know the exact steps |
+| Autonomy is beneficial | You want deterministic behavior |
+
+## Performance Considerations
+
+<Tip>
+  **Optimization Strategies**
+  
+  - **Model Selection**: Use faster models (GPT-3.5) for simple tasks, advanced models (GPT-4) for complex reasoning
+  - **Tool Descriptions**: Write clear, concise tool descriptions to help the agent choose correctly
+  - **Streaming**: Enable streaming for better user experience during long-running tasks
+  - **Caching**: Cache tool results when appropriate to reduce redundant calls
+</Tip>
+
+## Monitoring and Debugging
+
+To debug agent behavior:
+
+1. **Enable Verbose Mode**: Set `DEBUG=true` in environment variables
+2. **Check Iterations**: Monitor how many steps the agent takes
+3. **Review Tool Calls**: Examine which tools were called and with what parameters
+4. **Analyze Reasoning**: Read the agent's thought process in verbose logs
+
+## Security Considerations
+
+<Warning>
+  **Security Best Practices**
+  
+  - **Validate Tool Inputs**: Always validate and sanitize tool inputs
+  - **Limit Tool Access**: Don't give agents access to destructive operations without safeguards
+  - **Monitor Behavior**: Log and review agent actions, especially in production
+  - **Input Moderation**: Use input moderation to prevent prompt injection
+  - **Rate Limiting**: Implement rate limits to prevent abuse
+</Warning>
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Tool Agent" icon="wrench">
+    Learn about the recommended agent for most use cases
+  </Card>
+  
+  <Card title="Tools Overview" icon="toolbox" href="/integrations/tools/calculator">
+    Explore available tools for your agents
+  </Card>
+  
+  <Card title="Custom Tools" icon="hammer" href="/integrations/tools/custom-tools">
+    Create custom tools for specialized tasks
+  </Card>
+  
+  <Card title="Memory Systems" icon="brain" href="/integrations/memory">
+    Understand agent memory options
+  </Card>
+</CardGroup>

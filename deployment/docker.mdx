@@ -1,0 +1,449 @@
+---
+title: Docker Deployment
+description: Deploy Flowise using Docker and Docker Compose
+---
+
+Docker provides the most consistent and portable way to deploy Flowise. This guide covers simple container deployment, Docker Compose setup, and advanced queue mode configuration.
+
+## Quick Start with Docker
+
+### Using Pre-built Image
+
+The fastest way to run Flowise in Docker:
+
+<Steps>
+  <Step title="Pull the latest image">
+    ```bash
+    docker pull flowiseai/flowise:latest
+    ```
+  </Step>
+  
+  <Step title="Run the container">
+    ```bash
+    docker run -d \
+      --name flowise \
+      -p 3000:3000 \
+      -v ~/.flowise:/root/.flowise \
+      flowiseai/flowise:latest
+    ```
+  </Step>
+  
+  <Step title="Access Flowise">
+    Open [http://localhost:3000](http://localhost:3000) in your browser.
+  </Step>
+</Steps>
+
+### Managing the Container
+
+<CodeGroup>
+```bash Stop Container
+docker stop flowise
+```
+
+```bash Start Container
+docker start flowise
+```
+
+```bash View Logs
+docker logs flowise -f
+```
+
+```bash Remove Container
+docker stop flowise
+docker rm flowise
+```
+</CodeGroup>
+
+## Building from Source
+
+### Build Your Own Image
+
+Build Flowise from the monorepo source:
+
+<Steps>
+  <Step title="Clone the repository">
+    ```bash
+    git clone https://github.com/FlowiseAI/Flowise.git
+    cd Flowise
+    ```
+  </Step>
+  
+  <Step title="Build the image">
+    ```bash
+    docker build --no-cache -t flowise .
+    ```
+    
+    This uses the Dockerfile at the project root which:
+    - Installs system dependencies (Chromium, Cairo, Pango)
+    - Sets up Node.js 20 Alpine environment
+    - Installs pnpm and builds the monorepo
+    - Configures Puppeteer for Chromium
+  </Step>
+  
+  <Step title="Run your custom image">
+    ```bash
+    docker run -d -p 3000:3000 flowise
+    ```
+  </Step>
+</Steps>
+
+<Info>
+The build process requires 8GB+ of RAM. The `NODE_OPTIONS=--max-old-space-size=8192` is set in the Dockerfile.
+</Info>
+
+## Docker Compose Deployment
+
+### Standard Setup
+
+Docker Compose provides the recommended way to deploy Flowise with data persistence:
+
+<Steps>
+  <Step title="Navigate to docker folder">
+    ```bash
+    cd docker
+    ```
+  </Step>
+  
+  <Step title="Create environment file">
+    ```bash
+    cp .env.example .env
+    ```
+    
+    Edit `.env` and configure your settings:
+    ```bash
+    PORT=3000
+    DATABASE_PATH=/root/.flowise
+    LOG_PATH=/root/.flowise/logs
+    SECRETKEY_PATH=/root/.flowise
+    BLOB_STORAGE_PATH=/root/.flowise/storage
+    ```
+  </Step>
+  
+  <Step title="Start the services">
+    ```bash
+    docker compose up -d
+    ```
+  </Step>
+  
+  <Step title="Verify deployment">
+    ```bash
+    docker compose ps
+    ```
+    
+    Check health status:
+    ```bash
+    docker compose logs flowise
+    ```
+  </Step>
+</Steps>
+
+### Stop and Manage Services
+
+<CodeGroup>
+```bash Stop Services
+docker compose stop
+```
+
+```bash Start Services
+docker compose start
+```
+
+```bash View Logs
+docker compose logs -f
+```
+
+```bash Restart Services
+docker compose restart
+```
+
+```bash Remove Everything
+docker compose down
+```
+
+```bash Remove with Volumes
+docker compose down -v
+```
+</CodeGroup>
+
+## Queue Mode (Advanced)
+
+Queue mode enables distributed processing for high-traffic production environments using Redis for job coordination.
+
+### Architecture
+
+- **Main Instance**: Handles HTTP requests, UI, and API
+- **Worker Instance(s)**: Process chatflow executions asynchronously
+- **Redis**: Message queue for job distribution
+- **Shared Storage**: Database and files accessible to all instances
+
+### Using Pre-built Images
+
+<Steps>
+  <Step title="Start queue mode with pre-built images">
+    ```bash
+    docker compose -f docker-compose-queue-prebuilt.yml up -d
+    ```
+    
+    This starts:
+    - Redis container (port 6379)
+    - Flowise main instance (port 3000)
+    - Flowise worker instance (port 5566)
+  </Step>
+  
+  <Step title="Monitor health">
+    ```bash
+    docker compose -f docker-compose-queue-prebuilt.yml ps
+    ```
+    
+    All containers should show "healthy" status:
+    - `flowise-redis`
+    - `flowise-main`
+    - `flowise-worker`
+  </Step>
+</Steps>
+
+### Building from Source
+
+For custom builds in queue mode:
+
+```bash
+docker compose -f docker-compose-queue-source.yml up -d
+```
+
+Monitor the build and deployment:
+
+```bash
+docker compose -f docker-compose-queue-source.yml logs -f
+```
+
+### Queue Configuration
+
+Key environment variables for queue mode:
+
+```bash .env
+# Enable queue mode
+MODE=queue
+
+# Queue settings
+QUEUE_NAME=flowise-queue
+WORKER_CONCURRENCY=100000
+REMOVE_ON_AGE=86400
+REMOVE_ON_COUNT=10000
+
+# Redis connection
+REDIS_URL=redis://redis:6379
+# OR individual settings:
+REDIS_HOST=localhost
+REDIS_PORT=6379
+REDIS_USERNAME=
+REDIS_PASSWORD=
+
+# Optional: BullMQ Dashboard
+ENABLE_BULLMQ_DASHBOARD=true
+```
+
+<Warning>
+Ensure Redis is properly secured in production environments. Configure authentication and network isolation.
+</Warning>
+
+## Data Persistence
+
+### Volume Mounting
+
+The Docker Compose configuration mounts `~/.flowise` to persist:
+
+```yaml
+volumes:
+  - ~/.flowise:/root/.flowise
+```
+
+This includes:
+- SQLite database (if using)
+- Encryption keys
+- Uploaded files
+- Log files
+
+### Database Configuration
+
+For production, use PostgreSQL or MySQL:
+
+```bash .env
+DATABASE_TYPE=postgres
+DATABASE_HOST=your-postgres-host
+DATABASE_PORT=5432
+DATABASE_NAME=flowise
+DATABASE_USER=flowise_user
+DATABASE_PASSWORD=secure_password
+DATABASE_SSL=true
+```
+
+### Cloud Storage
+
+Configure S3 or Google Cloud Storage for uploaded files:
+
+<CodeGroup>
+```bash AWS S3
+STORAGE_TYPE=s3
+S3_STORAGE_BUCKET_NAME=flowise-storage
+S3_STORAGE_ACCESS_KEY_ID=your-access-key
+S3_STORAGE_SECRET_ACCESS_KEY=your-secret-key
+S3_STORAGE_REGION=us-east-1
+```
+
+```bash Google Cloud Storage
+STORAGE_TYPE=gcs
+GOOGLE_CLOUD_STORAGE_PROJ_ID=your-project-id
+GOOGLE_CLOUD_STORAGE_CREDENTIAL=/path/to/keyfile.json
+GOOGLE_CLOUD_STORAGE_BUCKET_NAME=flowise-storage
+GOOGLE_CLOUD_UNIFORM_BUCKET_ACCESS=true
+```
+</CodeGroup>
+
+## Production Configuration
+
+### Health Checks
+
+The Docker Compose configuration includes health checks:
+
+```yaml
+healthcheck:
+  test: ['CMD', 'curl', '-f', 'http://localhost:3000/api/v1/ping']
+  interval: 10s
+  timeout: 5s
+  retries: 5
+  start_period: 30s
+```
+
+### Environment Variables
+
+Essential production settings:
+
+<CodeGroup>
+```bash Security
+# Generate with: openssl rand -hex 32
+JWT_AUTH_TOKEN_SECRET=your-jwt-secret
+JWT_REFRESH_TOKEN_SECRET=your-refresh-secret
+EXPRESS_SESSION_SECRET=your-session-secret
+TOKEN_HASH_SECRET=your-token-hash-secret
+
+# Security settings
+SECURE_COOKIES=true
+TRUST_PROXY=true
+HTTP_SECURITY_CHECK=true
+```
+
+```bash CORS & Origins
+CORS_ORIGINS=https://yourdomain.com
+IFRAME_ORIGINS=https://yourdomain.com
+APP_URL=https://yourdomain.com
+```
+
+```bash Logging
+LOG_LEVEL=info
+LOG_PATH=/root/.flowise/logs
+DEBUG=false
+```
+
+```bash Metrics
+ENABLE_METRICS=true
+METRICS_PROVIDER=prometheus
+METRICS_INCLUDE_NODE_METRICS=true
+```
+</CodeGroup>
+
+## Scaling Worker Instances
+
+Scale workers horizontally in queue mode:
+
+```bash
+docker compose -f docker-compose-queue-prebuilt.yml up -d --scale flowise-worker=3
+```
+
+This runs 3 worker instances, all connected to the same Redis queue.
+
+## Troubleshooting
+
+### Container Won't Start
+
+Check logs for errors:
+
+```bash
+docker logs flowise
+```
+
+Common issues:
+- Port 3000 already in use: Change `PORT` in `.env`
+- Permission errors: Ensure volume mount permissions
+- Memory issues: Increase Docker memory allocation
+
+### Database Connection Errors
+
+Verify database settings:
+
+```bash
+docker compose exec flowise env | grep DATABASE
+```
+
+Test database connectivity from container:
+
+```bash
+docker compose exec flowise sh
+# Then test connection to your database
+```
+
+### Queue Mode Issues
+
+Verify Redis connectivity:
+
+```bash
+docker compose exec flowise sh -c 'curl redis:6379'
+```
+
+Check worker logs:
+
+```bash
+docker compose logs flowise-worker -f
+```
+
+### Performance Issues
+
+Increase Node.js memory:
+
+```yaml
+environment:
+  - NODE_OPTIONS=--max-old-space-size=8192
+```
+
+Monitor container resources:
+
+```bash
+docker stats flowise
+```
+
+## Docker Compose Reference
+
+The `docker-compose.yml` includes:
+
+- **Image**: `flowiseai/flowise:latest`
+- **Restart Policy**: `always`
+- **Health Checks**: Automatic monitoring
+- **Volume Mounts**: Data persistence
+- **Environment Variables**: Full configuration support
+- **Port Mapping**: Configurable via `.env`
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Environment Variables" icon="gear" href="/configuration/environment-variables">
+    Complete environment configuration reference
+  </Card>
+  <Card title="Cloud Deployment" icon="cloud" href="/deployment/cloud-providers">
+    Deploy to AWS, Azure, GCP, and more
+  </Card>
+  <Card title="Production Best Practices" icon="shield" href="/deployment/overview">
+    Security and scaling considerations
+  </Card>
+  <Card title="API Documentation" icon="code" href="/api/overview">
+    Integrate with Flowise APIs
+  </Card>
+</CardGroup>

@@ -1,0 +1,524 @@
+---
+title: Troubleshooting
+description: Solutions to common issues and problems with Flowise
+---
+
+This guide covers common issues you might encounter when using Flowise and their solutions. If you don't find your issue here, check our [FAQ](/resources/faq) or reach out on [Discord](https://discord.gg/jbaHfsRVBW).
+
+## Installation Issues
+
+### Port Already in Use
+
+**Problem**: Flowise won't start because port 3000 is already in use.
+
+**Solution**:
+
+<Tabs>
+  <Tab title="Change Port">
+    Set a different port using environment variables:
+    
+    ```bash
+    PORT=3001 npx flowise start
+    ```
+    
+    Or in your `.env` file:
+    ```bash
+    PORT=3001
+    ```
+  </Tab>
+  
+  <Tab title="Kill Existing Process">
+    **Linux/Mac**:
+    ```bash
+    lsof -ti:3000 | xargs kill -9
+    ```
+    
+    **Windows (PowerShell)**:
+    ```powershell
+    Get-Process -Id (Get-NetTCPConnection -LocalPort 3000).OwningProcess | Stop-Process -Force
+    ```
+    
+    **Windows (CMD)**:
+    ```cmd
+    netstat -ano | findstr :3000
+    taskkill /PID <PID> /F
+    ```
+  </Tab>
+</Tabs>
+
+### JavaScript Heap Out of Memory
+
+**Problem**: Build fails with "FATAL ERROR: Reached heap limit Allocation failed - JavaScript heap out of memory"
+
+**Solution**: Increase Node.js memory allocation:
+
+<Tabs>
+  <Tab title="macOS/Linux/Git Bash">
+    ```bash
+    export NODE_OPTIONS="--max-old-space-size=4096"
+    pnpm build
+    ```
+  </Tab>
+  
+  <Tab title="Windows PowerShell">
+    ```powershell
+    $env:NODE_OPTIONS="--max-old-space-size=4096"
+    pnpm build
+    ```
+  </Tab>
+  
+  <Tab title="Windows CMD">
+    ```cmd
+    set NODE_OPTIONS=--max-old-space-size=4096
+    pnpm build
+    ```
+  </Tab>
+</Tabs>
+
+### PNPM Version Mismatch
+
+**Problem**: Installation fails with PNPM version errors.
+
+**Solution**: Flowise requires PNPM v10. Install the correct version:
+
+```bash
+npm i -g pnpm@10
+pnpm --version  # Should show 10.x.x
+```
+
+### Node.js Version Issues
+
+**Problem**: Compatibility errors during installation or runtime.
+
+**Solution**: Flowise requires Node.js >= 18.15.0 (< 19.0.0 or ^20):
+
+```bash
+node --version  # Should show v18.15.0+ or v20.x.x
+```
+
+Consider using [nvm](https://github.com/nvm-sh/nvm) to manage Node.js versions:
+
+```bash
+# Install and use Node.js 20
+nvm install 20
+nvm use 20
+```
+
+## Runtime Issues
+
+### Components Not Appearing
+
+**Problem**: Custom or community components don't show up in the UI.
+
+**Solutions**:
+
+<Steps>
+  <Step title="Enable Community Nodes">
+    Add to your `.env` file:
+    ```bash
+    SHOW_COMMUNITY_NODES=true
+    ```
+  </Step>
+  
+  <Step title="Rebuild Components">
+    After adding custom components:
+    ```bash
+    pnpm build
+    pnpm start
+    ```
+  </Step>
+  
+  <Step title="Clear Cache">
+    Perform a clean rebuild:
+    ```bash
+    pnpm clean
+    pnpm build
+    pnpm start
+    ```
+  </Step>
+</Steps>
+
+### API Credentials Not Saving
+
+**Problem**: API keys and credentials aren't persisting after restart.
+
+**Solutions**:
+
+1. **Check encryption key path**:
+   ```bash
+   # Verify SECRETKEY_PATH is writable
+   ls -la ~/.flowise/
+   ```
+
+2. **Use consistent encryption key**:
+   ```bash
+   # In .env file
+   FLOWISE_SECRETKEY_OVERWRITE=your-secret-key-here
+   ```
+
+3. **Check database permissions**:
+   ```bash
+   # Ensure database file is writable
+   chmod 644 ~/.flowise/database.sqlite
+   ```
+
+### Database Connection Errors
+
+**Problem**: Cannot connect to PostgreSQL or MySQL database.
+
+**Solutions**:
+
+<Accordion title="PostgreSQL Connection Issues">
+  Verify your environment variables:
+  
+  ```bash
+  DATABASE_TYPE=postgres
+  DATABASE_HOST=localhost
+  DATABASE_PORT=5432
+  DATABASE_USER=flowise
+  DATABASE_PASSWORD=your-password
+  DATABASE_NAME=flowise
+  ```
+  
+  Test connection:
+  ```bash
+  psql -h localhost -U flowise -d flowise
+  ```
+  
+  For SSL connections:
+  ```bash
+  DATABASE_SSL=true
+  # Or use base64 encoded certificate
+  DATABASE_SSL_KEY_BASE64=your-cert-base64
+  ```
+</Accordion>
+
+<Accordion title="MySQL Connection Issues">
+  Verify configuration:
+  
+  ```bash
+  DATABASE_TYPE=mysql
+  DATABASE_HOST=localhost
+  DATABASE_PORT=3306
+  DATABASE_USER=flowise
+  DATABASE_PASSWORD=your-password
+  DATABASE_NAME=flowise
+  ```
+  
+  Test connection:
+  ```bash
+  mysql -h localhost -u flowise -p flowise
+  ```
+</Accordion>
+
+### CORS Errors
+
+**Problem**: Browser shows CORS errors when accessing Flowise API.
+
+**Solution**: Configure allowed origins:
+
+```bash
+# Single origin
+CORS_ORIGINS=https://yourdomain.com
+
+# Multiple origins (comma-separated)
+CORS_ORIGINS=https://domain1.com,https://domain2.com
+
+# Allow all (not recommended for production)
+CORS_ORIGINS=*
+```
+
+For iframe embedding:
+```bash
+IFRAME_ORIGINS=https://yourdomain.com
+```
+
+## Development Issues
+
+### Hot Reload Not Working
+
+**Problem**: Changes in development mode don't reload automatically.
+
+**Solutions**:
+
+1. **For UI/Server changes**: Should reload automatically with `pnpm dev`
+
+2. **For component changes**: Rebuild required:
+   ```bash
+   pnpm build
+   ```
+
+3. **Check `.env` files exist**:
+   - `packages/ui/.env` with `VITE_PORT`
+   - `packages/server/.env` with `PORT`
+
+### Module Not Found Errors
+
+**Problem**: Import errors or missing module errors during development.
+
+**Solutions**:
+
+<Steps>
+  <Step title="Clean Installation">
+    ```bash
+    pnpm clean
+    rm -rf node_modules
+    pnpm install
+    ```
+  </Step>
+  
+  <Step title="Rebuild All Packages">
+    ```bash
+    pnpm build
+    ```
+  </Step>
+  
+  <Step title="Check Package Links">
+    ```bash
+    # Verify workspace links
+    pnpm list
+    ```
+  </Step>
+</Steps>
+
+### TypeScript Errors
+
+**Problem**: Type errors during development or build.
+
+**Solution**: Ensure you're using the correct TypeScript version:
+
+```bash
+# Should be 5.4.5+ as specified in package.json
+npx tsc --version
+```
+
+Regenerate type definitions:
+```bash
+pnpm build
+```
+
+## Production Issues
+
+### File Upload Failures
+
+**Problem**: Cannot upload files or attachments.
+
+**Solutions**:
+
+1. **Check file size limit**:
+   ```bash
+   FLOWISE_FILE_SIZE_LIMIT=50mb  # Adjust as needed
+   ```
+
+2. **Verify storage configuration**:
+   
+   <Tabs>
+     <Tab title="Local Storage">
+       ```bash
+       STORAGE_TYPE=local
+       BLOB_STORAGE_PATH=/path/to/storage
+       ```
+       
+       Ensure path is writable:
+       ```bash
+       mkdir -p /path/to/storage
+       chmod 755 /path/to/storage
+       ```
+     </Tab>
+     
+     <Tab title="S3 Storage">
+       ```bash
+       STORAGE_TYPE=s3
+       S3_STORAGE_BUCKET_NAME=your-bucket
+       S3_STORAGE_ACCESS_KEY_ID=your-key
+       S3_STORAGE_SECRET_ACCESS_KEY=your-secret
+       S3_STORAGE_REGION=us-east-1
+       ```
+     </Tab>
+     
+     <Tab title="GCS Storage">
+       ```bash
+       STORAGE_TYPE=gcs
+       GOOGLE_CLOUD_STORAGE_BUCKET_NAME=your-bucket
+       GOOGLE_CLOUD_STORAGE_PROJ_ID=your-project
+       GOOGLE_CLOUD_STORAGE_CREDENTIAL=/path/to/credentials.json
+       ```
+     </Tab>
+   </Tabs>
+
+### Performance Issues
+
+**Problem**: Slow response times or high memory usage.
+
+**Solutions**:
+
+<AccordionGroup>
+  <Accordion title="Optimize Database">
+    **Switch to PostgreSQL** for better performance:
+    
+    ```bash
+    DATABASE_TYPE=postgres
+    # ... other database settings
+    ```
+    
+    **Regular maintenance**:
+    ```sql
+    -- PostgreSQL
+    VACUUM ANALYZE;
+    REINDEX DATABASE flowise;
+    ```
+  </Accordion>
+  
+  <Accordion title="Reduce Logging">
+    Lower log verbosity in production:
+    
+    ```bash
+    LOG_LEVEL=error
+    DEBUG=false
+    ```
+  </Accordion>
+  
+  <Accordion title="Scale Horizontally">
+    Deploy multiple Flowise instances behind a load balancer. Ensure:
+    - Shared database (PostgreSQL/MySQL)
+    - Shared storage (S3/GCS)
+    - Session affinity if needed
+  </Accordion>
+</AccordionGroup>
+
+### Docker Issues
+
+**Problem**: Issues running Flowise in Docker.
+
+**Solutions**:
+
+<Accordion title="Container Won't Start">
+  Check logs:
+  ```bash
+  docker logs flowise
+  ```
+  
+  Ensure proper port mapping:
+  ```bash
+  docker run -d -p 3000:3000 --name flowise flowiseai/flowise
+  ```
+</Accordion>
+
+<Accordion title="Volume Persistence">
+  Mount volumes for data persistence:
+  
+  ```bash
+  docker run -d \
+    -p 3000:3000 \
+    -v flowise_data:/root/.flowise \
+    --name flowise \
+    flowiseai/flowise
+  ```
+</Accordion>
+
+<Accordion title="Environment Variables">
+  Pass environment variables:
+  
+  ```bash
+  docker run -d \
+    -p 3000:3000 \
+    -e DATABASE_TYPE=postgres \
+    -e DATABASE_HOST=db \
+    --name flowise \
+    flowiseai/flowise
+  ```
+  
+  Or use docker-compose with `.env` file.
+</Accordion>
+
+## API & Integration Issues
+
+### API Authentication Errors
+
+**Problem**: External API calls failing with authentication errors.
+
+**Solutions**:
+
+1. **Verify API credentials** are correctly saved in Flowise
+2. **Check API key format** (some providers require prefixes like `sk-`)
+3. **Test credentials directly**:
+   ```bash
+   curl https://api.openai.com/v1/models \
+     -H "Authorization: Bearer YOUR_API_KEY"
+   ```
+
+4. **Review rate limits** on your API provider account
+
+### Custom Tool/Function Issues
+
+**Problem**: Custom tools or functions not working.
+
+**Solutions**:
+
+1. **Enable dependencies**:
+   ```bash
+   TOOL_FUNCTION_BUILTIN_DEP=fs,path,crypto
+   TOOL_FUNCTION_EXTERNAL_DEP=axios,lodash
+   ALLOW_BUILTIN_DEP=true
+   ```
+
+2. **Check function syntax** in the custom tool editor
+
+3. **Enable debug mode**:
+   ```bash
+   DEBUG=true
+   LOG_LEVEL=debug
+   ```
+
+## Getting More Help
+
+<Warning>
+Before asking for help, collect the following information:
+- Flowise version (`package.json` or GitHub release)
+- Node.js version (`node --version`)
+- Operating system
+- Database type
+- Error messages and logs
+- Steps to reproduce
+</Warning>
+
+<CardGroup cols={2}>
+  <Card title="FAQ" icon="question" href="/resources/faq">
+    Check frequently asked questions
+  </Card>
+  
+  <Card title="Discord Community" icon="discord" href="https://discord.gg/jbaHfsRVBW">
+    Get real-time help from the community
+  </Card>
+  
+  <Card title="GitHub Discussions" icon="github" href="https://github.com/FlowiseAI/Flowise/discussions">
+    Search or start a discussion
+  </Card>
+  
+  <Card title="Report Bug" icon="bug" href="https://github.com/FlowiseAI/Flowise/issues/new/choose">
+    File a bug report
+  </Card>
+</CardGroup>
+
+## Enable Debug Logging
+
+For detailed troubleshooting, enable comprehensive logging:
+
+```bash
+# In .env file or environment
+DEBUG=true
+LOG_LEVEL=debug
+LOG_PATH=/path/to/logs
+```
+
+Then check the logs:
+```bash
+tail -f /path/to/logs/flowise.log
+```
+
+This will provide detailed information about:
+- Component initialization
+- API calls and responses
+- Database queries
+- Error stack traces
+- Request/response cycles

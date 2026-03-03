@@ -1,0 +1,384 @@
+---
+title: 'Text File Loader'
+description: 'Load text-based files including code, markdown, and plain text'
+icon: 'file-lines'
+---
+
+The Text File Loader enables you to load and process text-based files in various formats, including plain text, code files, markdown, HTML, and more.
+
+## Overview
+
+This versatile loader uses LangChain's `TextLoader` to read text content from files. It supports a wide range of text-based file formats, making it ideal for loading documentation, code, configuration files, and other text content.
+
+## Supported File Types
+
+The Text File Loader supports an extensive list of file formats:
+
+<Tabs>
+  <Tab title="Documentation">
+    - `.txt` - Plain text files
+    - `.md` / `.markdown` - Markdown files
+    - `.html` - HTML documents
+    - `.xml` - XML documents
+    - `.rst` - reStructuredText
+    - `.tex` / `.ltx` - LaTeX documents
+  </Tab>
+  
+  <Tab title="Programming">
+    - `.js` - JavaScript
+    - `.ts` - TypeScript
+    - `.py` / `.python` - Python
+    - `.java` - Java
+    - `.cpp` / `.c` - C/C++
+    - `.cs` - C#
+    - `.go` - Go
+    - `.rs` - Rust
+    - `.rb` / `.ruby` - Ruby
+    - `.php` - PHP
+    - `.swift` - Swift
+    - `.scala` / `.sc` - Scala
+    - `.sol` - Solidity
+    - `.vb` - Visual Basic
+  </Tab>
+  
+  <Tab title="Web & Styling">
+    - `.css` - CSS stylesheets
+    - `.scss` - SCSS/Sass
+    - `.less` - Less CSS
+    - `.html` - HTML documents
+    - `.aspx` / `.asp` - ASP.NET
+  </Tab>
+  
+  <Tab title="Configuration">
+    - `.sql` - SQL scripts
+    - `.proto` - Protocol Buffers
+    - `.h` - C/C++ header files
+    - `.xml` - XML files
+  </Tab>
+</Tabs>
+
+## Configuration
+
+<ParamField path="txtFile" type="file" required>
+  The text file(s) to load. Supports multiple file upload.
+  
+  **Supported Extensions**: See the comprehensive list above
+</ParamField>
+
+<ParamField path="textSplitter" type="TextSplitter" optional>
+  Optional text splitter to chunk the file content into smaller segments.
+  
+  <Note>
+    Recommended for large files or when processing with LLMs that have context limits.
+  </Note>
+</ParamField>
+
+### Advanced Parameters
+
+<ParamField path="metadata" type="json" optional>
+  Additional metadata to attach to the extracted documents.
+  
+  ```json
+  {
+    "project": "flowise",
+    "file_type": "documentation",
+    "language": "markdown",
+    "last_updated": "2024-01-15"
+  }
+  ```
+</ParamField>
+
+<ParamField path="omitMetadataKeys" type="string" optional>
+  Comma-separated list of metadata keys to exclude from the output.
+  
+  **Example**: `source, blobType`
+  
+  **Special value**: Use `*` to omit all default metadata and only include your custom metadata.
+</ParamField>
+
+## Output
+
+The Text File Loader provides two output formats:
+
+<Tabs>
+  <Tab title="Document">
+    Returns an array of document objects containing the file content and metadata.
+    
+    ```json
+    [
+      {
+        "pageContent": "# Getting Started\n\nThis is a markdown file...",
+        "metadata": {
+          "source": "blob",
+          "blobType": "text/plain",
+          "loc": {
+            "lines": {
+              "from": 1,
+              "to": 1
+            }
+          }
+        }
+      }
+    ]
+    ```
+  </Tab>
+  
+  <Tab title="Text">
+    Returns the file content as a concatenated string.
+    
+    ```markdown
+    # Getting Started
+    
+    This is a markdown file with documentation content.
+    
+    ## Installation
+    
+    Follow these steps...
+    ```
+  </Tab>
+</Tabs>
+
+## Usage Examples
+
+### Loading a Single Text File
+
+<Steps>
+  <Step title="Add Text File Node">
+    Drag the **Text File** node from the Document Loaders category onto your canvas.
+  </Step>
+  
+  <Step title="Upload File">
+    Click the file input and select your text file (e.g., README.md, config.json, script.py).
+  </Step>
+  
+  <Step title="Optional: Add Text Splitter">
+    For large files, connect a text splitter to chunk the content appropriately.
+  </Step>
+  
+  <Step title="Connect to Workflow">
+    Connect the output to your vector store, LLM, or other processing nodes.
+  </Step>
+</Steps>
+
+### Loading Multiple Files
+
+<CodeGroup>
+```typescript Example: Loading Documentation Files
+// Upload multiple markdown files:
+// - README.md
+// - CONTRIBUTING.md
+// - CHANGELOG.md
+
+// Each file will be processed as a separate document
+// with its own metadata
+```
+</CodeGroup>
+
+When you upload multiple files, each file is processed independently and added to the document array.
+
+### Loading Code Files
+
+<CodeGroup>
+```python Python Example
+# Upload a Python file
+# The entire code will be preserved as text
+
+def hello_world():
+    print("Hello, World!")
+
+if __name__ == "__main__":
+    hello_world()
+```
+
+```javascript JavaScript Example
+// Upload a JavaScript file
+// Functions and comments are preserved
+
+function greet(name) {
+  return `Hello, ${name}!`;
+}
+
+console.log(greet('Flowise'));
+```
+</CodeGroup>
+
+<Tip>
+  Code files are loaded as plain text. If you need syntax-aware processing, consider using specialized code analysis tools after loading.
+</Tip>
+
+### With Custom Metadata
+
+```json
+{
+  "repository": "flowise-ai/flowise",
+  "file_path": "src/utils/index.ts",
+  "author": "dev-team",
+  "version": "1.4.0",
+  "tags": ["utility", "helper"]
+}
+```
+
+This metadata helps with:
+- Organizing loaded documents
+- Filtering during retrieval
+- Tracking document sources
+- Version control integration
+
+## Common Use Cases
+
+<CardGroup cols={2}>
+  <Card title="Code Documentation" icon="code">
+    Load README files and documentation for AI-assisted code exploration
+  </Card>
+  
+  <Card title="Knowledge Base" icon="book-open">
+    Import markdown documentation into searchable knowledge bases
+  </Card>
+  
+  <Card title="Configuration Analysis" icon="gear">
+    Load and analyze configuration files (JSON, YAML, XML)
+  </Card>
+  
+  <Card title="Content Processing" icon="file-lines">
+    Process text content for summarization, analysis, or transformation
+  </Card>
+</CardGroup>
+
+### Specific Scenarios
+
+<AccordionGroup>
+  <Accordion title="Loading Documentation Site" icon="book">
+    **Scenario**: Load all markdown files from a documentation repository
+    
+    **Steps**:
+    1. Upload all `.md` files from your docs folder
+    2. Add metadata to tag documentation sections
+    3. Use a text splitter to create searchable chunks
+    4. Store in a vector database for semantic search
+    5. Build a Q&A chatbot over your documentation
+  </Accordion>
+  
+  <Accordion title="Code Repository Indexing" icon="code-branch">
+    **Scenario**: Index source code for AI-assisted development
+    
+    **Steps**:
+    1. Load code files (`.js`, `.ts`, `.py`, etc.)
+    2. Add metadata for file paths and modules
+    3. Use code-aware text splitters
+    4. Enable developers to ask questions about the codebase
+  </Accordion>
+  
+  <Accordion title="Multi-language Content" icon="language">
+    **Scenario**: Load translated documentation in multiple languages
+    
+    **Steps**:
+    1. Upload files for each language
+    2. Add `language` field to metadata
+    3. Use language-specific text splitters if available
+    4. Enable language-filtered retrieval
+  </Accordion>
+</AccordionGroup>
+
+## File Storage Reference
+
+The Text File Loader supports both direct file uploads and file storage references:
+
+<Tabs>
+  <Tab title="Direct Upload">
+    Files are uploaded directly through the UI and converted to base64.
+    
+    ```
+    data:text/plain;base64,SGVsbG8gV29ybGQ=
+    ```
+  </Tab>
+  
+  <Tab title="File Storage">
+    Files stored in Flowise's file storage system are referenced by name.
+    
+    ```
+    FILE-STORAGE::["README.md","CONTRIBUTING.md"]
+    ```
+    
+    This format is used for:
+    - Persistent file storage
+    - Multi-file batch processing
+    - Organization-specific file management
+  </Tab>
+</Tabs>
+
+## Best Practices
+
+<Check>
+  **Recommended Practices**
+  
+  1. **Use Text Splitters**: Always use text splitters for files larger than a few hundred lines
+  2. **Add Metadata**: Include source information for better retrieval and debugging
+  3. **Encoding**: Ensure files are UTF-8 encoded to avoid character issues
+  4. **Organization**: Use consistent naming conventions for uploaded files
+</Check>
+
+<Warning>
+  **Important Considerations**
+  
+  - **Binary Files**: This loader is for text files only. Binary files may produce garbled output.
+  - **Large Files**: Files with millions of lines may cause memory issues. Consider splitting large files before upload.
+  - **Encoding**: Non-UTF-8 encoded files may have character encoding issues.
+</Warning>
+
+## Troubleshooting
+
+<AccordionGroup>
+  <Accordion title="Garbled or corrupted text">
+    **Cause**: File encoding is not UTF-8
+    
+    **Solution**: Convert your file to UTF-8 encoding before uploading:
+    ```bash
+    iconv -f ISO-8859-1 -t UTF-8 input.txt > output.txt
+    ```
+  </Accordion>
+  
+  <Accordion title="File too large to process">
+    **Cause**: File exceeds memory limits
+    
+    **Solutions**:
+    1. Split the file into smaller chunks before uploading
+    2. Use a more aggressive text splitter configuration
+    3. Process the file in batches
+  </Accordion>
+  
+  <Accordion title="Unsupported file type">
+    **Cause**: File extension not in the supported list
+    
+    **Solutions**:
+    1. Rename the file to a supported extension if it's text-based
+    2. Convert the file to a supported format
+    3. Use a different, more appropriate loader (e.g., PDF loader for PDFs)
+  </Accordion>
+</AccordionGroup>
+
+## Performance Tips
+
+<Tip>
+  **Optimization Strategies**
+  
+  - **Chunk Size**: Set appropriate chunk sizes based on your LLM's context window
+  - **Metadata**: Keep metadata lightweight to reduce storage overhead
+  - **Batch Processing**: Upload multiple related files together for efficiency
+  - **Caching**: Reuse loaded documents when possible instead of re-loading
+</Tip>
+
+## Related Resources
+
+<CardGroup cols={2}>
+  <Card title="File Loader" icon="file">
+    Generic loader for multiple file types
+  </Card>
+  
+  <Card title="Vector Stores" icon="database" href="/integrations/vector-stores/pinecone">
+    Store text content for semantic search
+  </Card>
+  
+  <Card title="Document Loaders" icon="file-arrow-down" href="/integrations/document-loaders/overview">
+    Explore all document loader options
+  </Card>
+</CardGroup>

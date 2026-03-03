@@ -1,0 +1,747 @@
+---
+title: Self-Hosting Guide
+description: Install and run Flowise on your own infrastructure
+---
+
+This guide covers installing and running Flowise directly on your own servers, VPS, or on-premises infrastructure without using Docker.
+
+## Prerequisites
+
+<Info>
+**Node.js version 18.15.0 or higher** is required for Flowise.
+</Info>
+
+### System Requirements
+
+**Minimum**:
+- CPU: 1 core
+- RAM: 2GB
+- Storage: 10GB available space
+- OS: Linux, macOS, or Windows
+
+**Recommended for Production**:
+- CPU: 2+ cores
+- RAM: 4GB+
+- Storage: 20GB+ SSD
+- OS: Ubuntu 20.04+, Debian 11+, or similar Linux distribution
+
+### Required Software
+
+- **Node.js**: >= 18.15.0 ([Download](https://nodejs.org/en/download))
+- **npm**: Comes with Node.js
+- **Git**: For cloning the repository (development builds)
+
+## Quick Installation
+
+The fastest way to get Flowise running:
+
+<Steps>
+  <Step title="Install Flowise globally">
+    ```bash
+    npm install -g flowise
+    ```
+    
+    This installs the latest stable version from npm.
+  </Step>
+  
+  <Step title="Start Flowise">
+    ```bash
+    npx flowise start
+    ```
+    
+    Or if globally installed:
+    ```bash
+    flowise start
+    ```
+  </Step>
+  
+  <Step title="Access the application">
+    Open [http://localhost:3000](http://localhost:3000) in your browser.
+  </Step>
+</Steps>
+
+### With Custom Configuration
+
+Start Flowise with custom settings:
+
+```bash
+npx flowise start --PORT=8080 --DEBUG=true
+```
+
+Or set environment variables:
+
+```bash
+PORT=8080 DEBUG=true npx flowise start
+```
+
+## Development Installation
+
+For development, customization, or running from source:
+
+<Steps>
+  <Step title="Install pnpm">
+    Flowise uses pnpm for dependency management:
+    
+    ```bash
+    npm install -g pnpm
+    ```
+    
+    The project is configured to use pnpm v10.
+  </Step>
+  
+  <Step title="Clone the repository">
+    ```bash
+    git clone https://github.com/FlowiseAI/Flowise.git
+    cd Flowise
+    ```
+  </Step>
+  
+  <Step title="Install dependencies">
+    ```bash
+    pnpm install
+    ```
+    
+    This installs dependencies for all modules:
+    - `server`: Node.js backend
+    - `ui`: React frontend
+    - `components`: Third-party integrations
+    - `api-documentation`: Auto-generated API docs
+  </Step>
+  
+  <Step title="Build the application">
+    ```bash
+    pnpm build
+    ```
+    
+    <Accordion title="Troubleshooting: JavaScript heap out of memory">
+      If you encounter exit code 134 (heap out of memory):
+      
+      ```bash
+      # macOS / Linux / Git Bash
+      export NODE_OPTIONS="--max-old-space-size=4096"
+      
+      # Windows PowerShell
+      $env:NODE_OPTIONS="--max-old-space-size=4096"
+      
+      # Windows CMD
+      set NODE_OPTIONS=--max-old-space-size=4096
+      ```
+      
+      Then run `pnpm build` again.
+    </Accordion>
+  </Step>
+  
+  <Step title="Start the application">
+    ```bash
+    pnpm start
+    ```
+    
+    Access at [http://localhost:3000](http://localhost:3000)
+  </Step>
+</Steps>
+
+## Development Mode
+
+For active development with hot reloading:
+
+<Steps>
+  <Step title="Configure UI development port">
+    Create `.env` file in `packages/ui`:
+    
+    ```bash packages/ui/.env
+    VITE_PORT=8080
+    ```
+  </Step>
+  
+  <Step title="Configure server port">
+    Create `.env` file in `packages/server`:
+    
+    ```bash packages/server/.env
+    PORT=3000
+    ```
+  </Step>
+  
+  <Step title="Start development mode">
+    ```bash
+    pnpm dev
+    ```
+    
+    This starts:
+    - Frontend dev server on [http://localhost:8080](http://localhost:8080)
+    - Backend API server on [http://localhost:3000](http://localhost:3000)
+    
+    Changes to `packages/ui` or `packages/server` auto-reload.
+  </Step>
+</Steps>
+
+<Info>
+For changes to `packages/components`, run `pnpm build` again to pick up the changes.
+</Info>
+
+## Production Setup
+
+### Environment Configuration
+
+Create a `.env` file in `packages/server` for production:
+
+```bash packages/server/.env
+# Server Configuration
+PORT=3000
+
+# Database (Use PostgreSQL or MySQL for production)
+DATABASE_TYPE=postgres
+DATABASE_HOST=localhost
+DATABASE_PORT=5432
+DATABASE_NAME=flowise
+DATABASE_USER=flowise_user
+DATABASE_PASSWORD=secure_password
+DATABASE_SSL=true
+
+# Storage Paths
+DATABASE_PATH=/var/lib/flowise
+LOG_PATH=/var/log/flowise
+SECRETKEY_PATH=/var/lib/flowise
+BLOB_STORAGE_PATH=/var/lib/flowise/storage
+
+# Security (Generate with: openssl rand -hex 32)
+JWT_AUTH_TOKEN_SECRET=your-jwt-secret-here
+JWT_REFRESH_TOKEN_SECRET=your-refresh-secret-here
+EXPRESS_SESSION_SECRET=your-session-secret-here
+TOKEN_HASH_SECRET=your-token-hash-secret-here
+
+# Production Settings
+DEBUG=false
+LOG_LEVEL=info
+SECURE_COOKIES=true
+TRUST_PROXY=true
+CORS_ORIGINS=https://yourdomain.com
+
+# Optional: Cloud Storage
+# STORAGE_TYPE=s3
+# S3_STORAGE_BUCKET_NAME=flowise-storage
+# S3_STORAGE_REGION=us-east-1
+```
+
+<Warning>
+Never use SQLite (`DATABASE_TYPE=sqlite`) for production deployments. Use PostgreSQL or MySQL.
+</Warning>
+
+### Database Setup
+
+#### PostgreSQL
+
+<Steps>
+  <Step title="Install PostgreSQL">
+    ```bash
+    # Ubuntu/Debian
+    sudo apt update
+    sudo apt install postgresql postgresql-contrib
+    
+    # CentOS/RHEL
+    sudo yum install postgresql-server postgresql-contrib
+    sudo postgresql-setup initdb
+    sudo systemctl start postgresql
+    ```
+  </Step>
+  
+  <Step title="Create database and user">
+    ```bash
+    sudo -u postgres psql
+    ```
+    
+    In PostgreSQL shell:
+    ```sql
+    CREATE DATABASE flowise;
+    CREATE USER flowise_user WITH PASSWORD 'secure_password';
+    GRANT ALL PRIVILEGES ON DATABASE flowise TO flowise_user;
+    \q
+    ```
+  </Step>
+  
+  <Step title="Configure connection">
+    Update `.env` with database credentials:
+    ```bash
+    DATABASE_TYPE=postgres
+    DATABASE_HOST=localhost
+    DATABASE_PORT=5432
+    DATABASE_NAME=flowise
+    DATABASE_USER=flowise_user
+    DATABASE_PASSWORD=secure_password
+    ```
+  </Step>
+</Steps>
+
+#### MySQL
+
+<Steps>
+  <Step title="Install MySQL">
+    ```bash
+    # Ubuntu/Debian
+    sudo apt update
+    sudo apt install mysql-server
+    
+    # CentOS/RHEL
+    sudo yum install mysql-server
+    sudo systemctl start mysqld
+    ```
+  </Step>
+  
+  <Step title="Create database and user">
+    ```bash
+    sudo mysql
+    ```
+    
+    In MySQL shell:
+    ```sql
+    CREATE DATABASE flowise;
+    CREATE USER 'flowise_user'@'localhost' IDENTIFIED BY 'secure_password';
+    GRANT ALL PRIVILEGES ON flowise.* TO 'flowise_user'@'localhost';
+    FLUSH PRIVILEGES;
+    EXIT;
+    ```
+  </Step>
+  
+  <Step title="Configure connection">
+    ```bash
+    DATABASE_TYPE=mysql
+    DATABASE_HOST=localhost
+    DATABASE_PORT=3306
+    DATABASE_NAME=flowise
+    DATABASE_USER=flowise_user
+    DATABASE_PASSWORD=secure_password
+    ```
+  </Step>
+</Steps>
+
+### Process Management
+
+Use a process manager to keep Flowise running:
+
+#### PM2 (Recommended)
+
+<Steps>
+  <Step title="Install PM2">
+    ```bash
+    npm install -g pm2
+    ```
+  </Step>
+  
+  <Step title="Create ecosystem file">
+    ```javascript ecosystem.config.js
+    module.exports = {
+      apps: [{
+        name: 'flowise',
+        script: 'npx',
+        args: 'flowise start',
+        cwd: '/path/to/flowise',
+        instances: 1,
+        autorestart: true,
+        watch: false,
+        max_memory_restart: '2G',
+        env: {
+          NODE_ENV: 'production',
+          PORT: 3000
+        },
+        error_file: '/var/log/flowise/error.log',
+        out_file: '/var/log/flowise/out.log',
+        log_date_format: 'YYYY-MM-DD HH:mm:ss Z'
+      }]
+    };
+    ```
+  </Step>
+  
+  <Step title="Start with PM2">
+    ```bash
+    pm2 start ecosystem.config.js
+    pm2 save
+    pm2 startup
+    ```
+  </Step>
+</Steps>
+
+<CodeGroup>
+```bash PM2 Commands
+# Status
+pm2 status
+
+# Logs
+pm2 logs flowise
+
+# Restart
+pm2 restart flowise
+
+# Stop
+pm2 stop flowise
+
+# Monitor
+pm2 monit
+```
+
+```bash systemd Service
+# Create systemd service file
+sudo nano /etc/systemd/system/flowise.service
+
+[Unit]
+Description=Flowise AI
+After=network.target
+
+[Service]
+Type=simple
+User=flowise
+WorkingDirectory=/opt/flowise
+Environment="NODE_ENV=production"
+Environment="PORT=3000"
+ExecStart=/usr/bin/npx flowise start
+Restart=on-failure
+RestartSec=10
+StandardOutput=syslog
+StandardError=syslog
+SyslogIdentifier=flowise
+
+[Install]
+WantedBy=multi-user.target
+
+# Enable and start
+sudo systemctl daemon-reload
+sudo systemctl enable flowise
+sudo systemctl start flowise
+```
+</CodeGroup>
+
+### Reverse Proxy Setup
+
+Use nginx or Apache for SSL termination and load balancing:
+
+#### Nginx
+
+<Steps>
+  <Step title="Install nginx">
+    ```bash
+    sudo apt install nginx
+    ```
+  </Step>
+  
+  <Step title="Create site configuration">
+    ```nginx /etc/nginx/sites-available/flowise
+    server {
+        listen 80;
+        server_name flowise.yourdomain.com;
+        
+        # Redirect HTTP to HTTPS
+        return 301 https://$server_name$request_uri;
+    }
+    
+    server {
+        listen 443 ssl http2;
+        server_name flowise.yourdomain.com;
+        
+        # SSL Configuration
+        ssl_certificate /etc/letsencrypt/live/flowise.yourdomain.com/fullchain.pem;
+        ssl_certificate_key /etc/letsencrypt/live/flowise.yourdomain.com/privkey.pem;
+        ssl_protocols TLSv1.2 TLSv1.3;
+        ssl_ciphers HIGH:!aNULL:!MD5;
+        
+        # Security headers
+        add_header Strict-Transport-Security "max-age=31536000" always;
+        add_header X-Frame-Options "SAMEORIGIN" always;
+        add_header X-Content-Type-Options "nosniff" always;
+        
+        # Proxy settings
+        location / {
+            proxy_pass http://localhost:3000;
+            proxy_http_version 1.1;
+            proxy_set_header Upgrade $http_upgrade;
+            proxy_set_header Connection 'upgrade';
+            proxy_set_header Host $host;
+            proxy_set_header X-Real-IP $remote_addr;
+            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+            proxy_set_header X-Forwarded-Proto $scheme;
+            proxy_cache_bypass $http_upgrade;
+            proxy_read_timeout 300;
+        }
+        
+        # Health check
+        location /api/v1/ping {
+            proxy_pass http://localhost:3000/api/v1/ping;
+            access_log off;
+        }
+    }
+    ```
+  </Step>
+  
+  <Step title="Enable site and restart nginx">
+    ```bash
+    sudo ln -s /etc/nginx/sites-available/flowise /etc/nginx/sites-enabled/
+    sudo nginx -t
+    sudo systemctl restart nginx
+    ```
+  </Step>
+</Steps>
+
+#### SSL with Let's Encrypt
+
+```bash
+# Install Certbot
+sudo apt install certbot python3-certbot-nginx
+
+# Obtain certificate
+sudo certbot --nginx -d flowise.yourdomain.com
+
+# Auto-renewal is configured by default
+sudo certbot renew --dry-run
+```
+
+## Monitoring and Logging
+
+### Application Logs
+
+Configure logging in `.env`:
+
+```bash
+LOG_PATH=/var/log/flowise
+LOG_LEVEL=info
+DEBUG=false
+```
+
+Log files:
+- `flowise.log`: Main application log
+- `error.log`: Error messages
+- `access.log`: HTTP access logs
+
+### System Monitoring
+
+<CodeGroup>
+```bash Check Process
+# With PM2
+pm2 status
+pm2 monit
+
+# With systemd
+sudo systemctl status flowise
+sudo journalctl -u flowise -f
+```
+
+```bash Resource Usage
+# CPU and Memory
+top -p $(pgrep -f flowise)
+
+# Disk usage
+df -h
+du -sh /var/lib/flowise
+
+# Network connections
+netstat -tlnp | grep :3000
+```
+</CodeGroup>
+
+### Health Checks
+
+Flowise provides a health check endpoint:
+
+```bash
+curl http://localhost:3000/api/v1/ping
+```
+
+Set up automated monitoring:
+
+```bash crontab
+# Check every 5 minutes
+*/5 * * * * curl -f http://localhost:3000/api/v1/ping || systemctl restart flowise
+```
+
+## Backup and Restore
+
+### Database Backup
+
+<CodeGroup>
+```bash PostgreSQL
+# Backup
+pg_dump -U flowise_user flowise > flowise_backup_$(date +%Y%m%d).sql
+
+# Restore
+psql -U flowise_user flowise < flowise_backup_20240101.sql
+```
+
+```bash MySQL
+# Backup
+mysqldump -u flowise_user -p flowise > flowise_backup_$(date +%Y%m%d).sql
+
+# Restore
+mysql -u flowise_user -p flowise < flowise_backup_20240101.sql
+```
+</CodeGroup>
+
+### File Storage Backup
+
+```bash
+# Backup storage directory
+tar -czf flowise_storage_$(date +%Y%m%d).tar.gz /var/lib/flowise/storage
+
+# Restore
+tar -xzf flowise_storage_20240101.tar.gz -C /var/lib/flowise/
+```
+
+### Automated Backups
+
+```bash /usr/local/bin/backup-flowise.sh
+#!/bin/bash
+
+BACKUP_DIR="/backups/flowise"
+DATE=$(date +%Y%m%d_%H%M%S)
+
+# Create backup directory
+mkdir -p $BACKUP_DIR
+
+# Backup database
+pg_dump -U flowise_user flowise | gzip > $BACKUP_DIR/db_$DATE.sql.gz
+
+# Backup files
+tar -czf $BACKUP_DIR/storage_$DATE.tar.gz /var/lib/flowise/storage
+
+# Keep only last 7 days
+find $BACKUP_DIR -type f -mtime +7 -delete
+
+echo "Backup completed: $DATE"
+```
+
+Schedule with cron:
+
+```bash
+# Daily backup at 2 AM
+0 2 * * * /usr/local/bin/backup-flowise.sh >> /var/log/flowise-backup.log 2>&1
+```
+
+## Updating Flowise
+
+### NPM Installation
+
+```bash
+# Update to latest version
+npm update -g flowise
+
+# Or install specific version
+npm install -g flowise@1.2.3
+
+# Restart the service
+pm2 restart flowise
+# OR
+sudo systemctl restart flowise
+```
+
+### Development Installation
+
+```bash
+cd Flowise
+git pull origin main
+pnpm install
+pnpm build
+pm2 restart flowise
+```
+
+## Troubleshooting
+
+### Port Already in Use
+
+```bash
+# Find process using port 3000
+sudo lsof -i :3000
+
+# Kill the process
+sudo kill -9 <PID>
+
+# Or use a different port
+PORT=8080 npx flowise start
+```
+
+### Permission Issues
+
+```bash
+# Fix directory permissions
+sudo chown -R $USER:$USER /var/lib/flowise
+sudo chown -R $USER:$USER /var/log/flowise
+```
+
+### Database Connection Errors
+
+```bash
+# Test PostgreSQL connection
+psql -U flowise_user -h localhost -d flowise
+
+# Check PostgreSQL is running
+sudo systemctl status postgresql
+
+# View PostgreSQL logs
+sudo tail -f /var/log/postgresql/postgresql-*.log
+```
+
+### High Memory Usage
+
+Increase Node.js heap size:
+
+```bash
+NODE_OPTIONS="--max-old-space-size=4096" npx flowise start
+```
+
+Or in PM2 ecosystem:
+
+```javascript
+node_args: '--max-old-space-size=4096'
+```
+
+## Security Hardening
+
+<Steps>
+  <Step title="Create dedicated user">
+    ```bash
+    sudo useradd -r -s /bin/false flowise
+    sudo chown -R flowise:flowise /var/lib/flowise
+    ```
+  </Step>
+  
+  <Step title="Configure firewall">
+    ```bash
+    # Allow nginx (80, 443)
+    sudo ufw allow 'Nginx Full'
+    
+    # Block direct access to Flowise port
+    sudo ufw deny 3000
+    
+    # Enable firewall
+    sudo ufw enable
+    ```
+  </Step>
+  
+  <Step title="Set secure environment variables">
+    Generate strong secrets:
+    ```bash
+    openssl rand -hex 32
+    ```
+    
+    Never commit `.env` files to version control.
+  </Step>
+  
+  <Step title="Enable fail2ban">
+    ```bash
+    sudo apt install fail2ban
+    sudo systemctl enable fail2ban
+    sudo systemctl start fail2ban
+    ```
+  </Step>
+</Steps>
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Environment Variables" icon="gear" href="/configuration/environment-variables">
+    Complete configuration reference
+  </Card>
+  <Card title="Docker Deployment" icon="docker" href="/deployment/docker">
+    Alternative deployment with Docker
+  </Card>
+  <Card title="API Documentation" icon="code" href="/api/overview">
+    Integrate with Flowise APIs
+  </Card>
+  <Card title="Cloud Providers" icon="cloud" href="/deployment/cloud-providers">
+    Deploy to cloud platforms
+  </Card>
+</CardGroup>

@@ -1,0 +1,321 @@
+---
+title: Frequently Asked Questions
+description: Common questions and answers about Flowise
+---
+
+Find answers to commonly asked questions about Flowise. If you don't find what you're looking for, visit our [Community](/resources/community) channels or [GitHub Discussions](https://github.com/FlowiseAI/Flowise/discussions).
+
+## General Questions
+
+<AccordionGroup>
+  <Accordion title="What is Flowise?">
+    Flowise is an open-source visual tool for building AI agents and LLM (Large Language Model) applications. It provides a drag-and-drop interface to create complex AI workflows without extensive coding.
+    
+    Key features include:
+    - Visual chatflow builder
+    - Pre-built components and integrations
+    - Support for multiple LLM providers
+    - Agent and chain configurations
+    - Self-hosting capabilities
+  </Accordion>
+
+  <Accordion title="Is Flowise free to use?">
+    Yes! Flowise is open-source and free to use under the Apache License Version 2.0. You can:
+    - Self-host on your own infrastructure
+    - Modify the source code
+    - Use it for commercial purposes
+    
+    We also offer [Flowise Cloud](https://flowiseai.com) for managed hosting with additional enterprise features.
+  </Accordion>
+
+  <Accordion title="What's the difference between Flowise and Flowise Cloud?">
+    **Flowise (Open Source)**:
+    - Self-hosted on your infrastructure
+    - Full control over data and deployment
+    - Requires setup and maintenance
+    - Free and open-source
+    
+    **Flowise Cloud**:
+    - Managed hosting
+    - No infrastructure setup required
+    - Enterprise features and support
+    - Automatic updates
+    - Pay-as-you-go pricing
+  </Accordion>
+
+  <Accordion title="What LLM providers does Flowise support?">
+    Flowise supports numerous LLM providers including:
+    - OpenAI (GPT-3.5, GPT-4, etc.)
+    - Azure OpenAI
+    - Anthropic Claude
+    - Google PaLM/Gemini
+    - Hugging Face models
+    - AWS Bedrock
+    - Cohere
+    - Local models via Ollama
+    - And many more through the components library
+  </Accordion>
+</AccordionGroup>
+
+## Installation & Setup
+
+<AccordionGroup>
+  <Accordion title="What are the system requirements?">
+    **Minimum Requirements**:
+    - Node.js >= 18.15.0 (< 19.0.0 or ^20)
+    - PNPM v10.26.0 (for development)
+    - 2GB RAM minimum
+    - Modern web browser (Chrome, Firefox, Safari, Edge)
+    
+    **Recommended**:
+    - 4GB+ RAM for better performance
+    - SSD storage
+    - Stable internet connection for LLM API calls
+  </Accordion>
+
+  <Accordion title="How do I install Flowise?">
+    **Quick Start (NPM)**:
+    ```bash
+    npm install -g flowise
+    npx flowise start
+    ```
+    
+    **Docker**:
+    ```bash
+    docker run -d -p 3000:3000 flowiseai/flowise
+    ```
+    
+    **From Source**:
+    ```bash
+    git clone https://github.com/FlowiseAI/Flowise.git
+    cd Flowise
+    pnpm install
+    pnpm build
+    pnpm start
+    ```
+    
+    See [Quickstart](/quickstart) for detailed instructions.
+  </Accordion>
+
+  <Accordion title="Which database does Flowise use?">
+    Flowise supports multiple databases:
+    - **SQLite** (default) - No setup required, ideal for development
+    - **PostgreSQL** - Recommended for production
+    - **MySQL** - Alternative for production
+    
+    Configure via the `DATABASE_TYPE` environment variable. See [Environment Variables](/configuration/environment-variables) for details.
+  </Accordion>
+
+  <Accordion title="Can I run Flowise behind a reverse proxy?">
+    Yes! Flowise works well behind reverse proxies like Nginx, Apache, or Caddy. Make sure to:
+    
+    1. Configure `CORS_ORIGINS` environment variable
+    2. Set `TRUST_PROXY` appropriately
+    3. Forward WebSocket connections for real-time features
+    
+    See [Deployment](/deployment/overview) guides for proxy configuration examples.
+  </Accordion>
+</AccordionGroup>
+
+## Development & Customization
+
+<AccordionGroup>
+  <Accordion title="How do I create custom components?">
+    Custom components are created in the `packages/components` directory:
+    
+    1. Create a new TypeScript file for your component
+    2. Implement the component interface
+    3. Define inputs, outputs, and logic
+    4. Rebuild the project: `pnpm build`
+    5. Restart Flowise to see your component
+    
+    See the existing components for examples and patterns.
+  </Accordion>
+
+  <Accordion title="Can I use custom npm packages in tools or functions?">
+    Yes, configure these environment variables:
+    
+    - `TOOL_FUNCTION_BUILTIN_DEP` - Node.js built-in modules
+    - `TOOL_FUNCTION_EXTERNAL_DEP` - External npm packages
+    - `ALLOW_BUILTIN_DEP` - Allow project dependencies
+    
+    Example:
+    ```bash
+    TOOL_FUNCTION_EXTERNAL_DEP=axios,lodash
+    ```
+  </Accordion>
+
+  <Accordion title="How do I enable debug mode?">
+    Set the `DEBUG` environment variable:
+    
+    ```bash
+    DEBUG=true npx flowise start
+    ```
+    
+    Or in your `.env` file:
+    ```bash
+    DEBUG=true
+    LOG_LEVEL=debug
+    ```
+    
+    This will print detailed logs from components and help troubleshoot issues.
+  </Accordion>
+
+  <Accordion title="Can I hide certain nodes from the UI?">
+    Yes, use the `DISABLED_NODES` environment variable:
+    
+    ```bash
+    DISABLED_NODES=node1,node2,node3
+    ```
+    
+    This is useful for enterprise deployments where you want to limit available components.
+  </Accordion>
+</AccordionGroup>
+
+## Deployment & Production
+
+<AccordionGroup>
+  <Accordion title="Where can I deploy Flowise?">
+    Flowise can be deployed on various platforms:
+    - **Cloud Providers**: AWS, Azure, GCP, Digital Ocean, Alibaba Cloud
+    - **Platform Services**: Railway, Render, Northflank, HuggingFace Spaces
+    - **Containers**: Docker, Kubernetes
+    - **VPS**: Any Linux server with Node.js
+    
+    See [Deployment Guides](/deployment/overview) for platform-specific instructions.
+  </Accordion>
+
+  <Accordion title="How do I secure my Flowise instance?">
+    Security best practices:
+    
+    1. **Use HTTPS**: Deploy behind SSL/TLS
+    2. **Environment Variables**: Store sensitive data in env vars, not code
+    3. **CORS Configuration**: Set `CORS_ORIGINS` to restrict access
+    4. **Database Security**: Use strong passwords, restrict network access
+    5. **Regular Updates**: Keep Flowise and dependencies updated
+    6. **Firewall**: Restrict access to necessary ports only
+    
+    For security issues, see our [Security Policy](https://github.com/FlowiseAI/Flowise/security).
+  </Accordion>
+
+  <Accordion title="How do I backup my chatflows?">
+    Chatflows are stored in your database. To backup:
+    
+    **SQLite**:
+    ```bash
+    # Copy the database file
+    cp ~/.flowise/database.sqlite ~/backups/
+    ```
+    
+    **PostgreSQL/MySQL**:
+    Use standard database backup tools (`pg_dump`, `mysqldump`)
+    
+    **Manual Export**:
+    Export individual chatflows as JSON from the UI and store them in version control.
+  </Accordion>
+
+  <Accordion title="How do I scale Flowise for production?">
+    Scaling strategies:
+    
+    1. **Database**: Use PostgreSQL instead of SQLite
+    2. **Storage**: Use S3 or GCS for file uploads (`STORAGE_TYPE`)
+    3. **Load Balancing**: Deploy multiple instances behind a load balancer
+    4. **Caching**: Implement caching for frequently accessed data
+    5. **Monitoring**: Set up logging and monitoring (CloudWatch, Datadog, etc.)
+    
+    Consider [Flowise Cloud](https://flowiseai.com) for managed scaling.
+  </Accordion>
+</AccordionGroup>
+
+## Troubleshooting
+
+<AccordionGroup>
+  <Accordion title="Flowise won't start - port already in use">
+    The default port (3000) is occupied. Solutions:
+    
+    1. **Change the port**:
+    ```bash
+    PORT=3001 npx flowise start
+    ```
+    
+    2. **Kill the process using port 3000**:
+    ```bash
+    # Linux/Mac
+    lsof -ti:3000 | xargs kill -9
+    
+    # Windows
+    netstat -ano | findstr :3000
+    taskkill /PID <PID> /F
+    ```
+  </Accordion>
+
+  <Accordion title="JavaScript heap out of memory during build">
+    Increase Node.js memory limit:
+    
+    ```bash
+    # macOS / Linux / Git Bash
+    export NODE_OPTIONS="--max-old-space-size=4096"
+    
+    # Windows PowerShell
+    $env:NODE_OPTIONS="--max-old-space-size=4096"
+    
+    # Windows CMD
+    set NODE_OPTIONS=--max-old-space-size=4096
+    ```
+    
+    Then rebuild:
+    ```bash
+    pnpm build
+    ```
+  </Accordion>
+
+  <Accordion title="Components not showing after installation">
+    If community nodes or custom components aren't appearing:
+    
+    1. **Enable community nodes**:
+    ```bash
+    SHOW_COMMUNITY_NODES=true
+    ```
+    
+    2. **Rebuild the project**:
+    ```bash
+    pnpm build
+    ```
+    
+    3. **Clear cache and restart**:
+    ```bash
+    pnpm clean
+    pnpm build
+    pnpm start
+    ```
+  </Accordion>
+
+  <Accordion title="API credentials not saving">
+    This usually indicates an issue with the encryption key:
+    
+    1. Check that `SECRETKEY_PATH` is writable
+    2. Verify the encryption key file exists
+    3. If using `FLOWISE_SECRETKEY_OVERWRITE`, ensure it's consistent across restarts
+    4. Check file permissions on the database
+  </Accordion>
+</AccordionGroup>
+
+## Still Need Help?
+
+<CardGroup cols={2}>
+  <Card title="Troubleshooting Guide" icon="wrench" href="/resources/troubleshooting">
+    Detailed solutions for common issues
+  </Card>
+  
+  <Card title="Community Support" icon="users" href="/resources/community">
+    Get help from the community
+  </Card>
+  
+  <Card title="GitHub Discussions" icon="github" href="https://github.com/FlowiseAI/Flowise/discussions">
+    Search discussions or ask questions
+  </Card>
+  
+  <Card title="Report a Bug" icon="bug" href="https://github.com/FlowiseAI/Flowise/issues/new/choose">
+    File an issue on GitHub
+  </Card>
+</CardGroup>

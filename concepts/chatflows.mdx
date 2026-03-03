@@ -1,0 +1,169 @@
+---
+title: Chatflows
+description: Build conversational AI applications with visual drag-and-drop chatflows
+---
+
+## What are Chatflows?
+
+Chatflows are visual workflows that allow you to build conversational AI applications using a drag-and-drop interface. They represent the traditional approach to building AI applications in Flowise, where you connect nodes in a sequential manner to create chat-based experiences.
+
+<Info>
+Chatflows are ideal for building chatbots, Q&A systems, document retrieval applications, and other conversational interfaces that follow a predictable flow.
+</Info>
+
+## Chatflow Types
+
+Flowise supports multiple chatflow types, each designed for specific use cases:
+
+<CardGroup cols={2}>
+  <Card title="CHATFLOW" icon="comments">
+    Standard conversational flows with chains and memory
+  </Card>
+  <Card title="MULTIAGENT" icon="users">
+    Coordinate multiple AI agents working together
+  </Card>
+  <Card title="ASSISTANT" icon="robot">
+    OpenAI Assistant API-powered chatflows
+  </Card>
+</CardGroup>
+
+## Core Components
+
+A chatflow is composed of several key elements:
+
+### Flow Data Structure
+
+Each chatflow contains:
+- **Nodes**: Individual components that perform specific tasks
+- **Edges**: Connections between nodes that define the flow of data
+- **Viewport**: The visual canvas configuration (position, zoom)
+
+```typescript
+interface IChatFlow {
+  id: string
+  name: string
+  flowData: string // Serialized JSON of nodes and edges
+  type: 'CHATFLOW' | 'MULTIAGENT' | 'ASSISTANT' | 'AGENTFLOW'
+  deployed: boolean
+  isPublic: boolean
+  workspaceId: string
+}
+```
+
+### Chatflow Properties
+
+<Note>
+Chatflows are stored as database entities with the following properties:
+</Note>
+
+- **Name**: Human-readable identifier for your chatflow
+- **Flow Data**: JSON representation of the visual canvas (nodes, edges, connections)
+- **Deployed**: Whether the chatflow is active and accessible via API
+- **Public**: Controls public accessibility without authentication
+- **API Config**: Configuration for API endpoints and responses
+- **Chatbot Config**: Settings for embedded chat widgets
+
+## Configuration Options
+
+Chatflows support extensive configuration:
+
+### Analytics
+
+Track and monitor chatflow performance:
+- Message analytics
+- User interactions
+- Response times
+- Token usage
+
+### Speech Integration
+
+Enhance your chatflows with voice capabilities:
+- **Speech-to-Text**: Convert user voice input to text
+- **Text-to-Speech**: Generate voice responses from AI output
+
+### Follow-Up Prompts
+
+Guide users with suggested questions and next steps after each response.
+
+### Categories
+
+Organize chatflows by use case or domain (e.g., "Customer Support", "Sales", "Internal Tools").
+
+## Building a Chatflow
+
+<Steps>
+  <Step title="Start with a Model">
+    Add a Chat Model node (e.g., ChatOpenAI, ChatAnthropic) as the foundation
+  </Step>
+  <Step title="Add Components">
+    Connect supporting nodes like:
+    - Document Loaders for knowledge bases
+    - Memory for conversation context
+    - Embeddings for semantic search
+    - Vector Stores for retrieval
+  </Step>
+  <Step title="Configure Chains">
+    Use Chain nodes to orchestrate the flow (e.g., Conversational Retrieval Chain)
+  </Step>
+  <Step title="Test & Deploy">
+    Test your chatflow in the interface, then deploy it to make it accessible via API
+  </Step>
+</Steps>
+
+## Chatflow vs Agentflow
+
+<Tip>
+Choosing between Chatflows and Agentflows depends on your use case:
+</Tip>
+
+| Feature | Chatflow | Agentflow |
+|---------|----------|----------|
+| **Structure** | Sequential, predictable | Dynamic, autonomous |
+| **Decision Making** | Pre-defined paths | AI-driven routing |
+| **Best For** | Q&A, RAG, simple bots | Complex workflows, multi-step reasoning |
+| **Execution** | Follows fixed chain | Adapts based on context |
+
+## Deployment
+
+Once your chatflow is ready:
+
+1. **Test Locally**: Use the built-in chat interface to validate responses
+2. **Deploy**: Toggle the deployment switch to activate the API endpoint
+3. **Integrate**: Use the generated API endpoint in your applications
+4. **Embed**: Add the chatbot widget to your website
+
+<Note>
+Deployed chatflows are accessible via:
+- REST API endpoints at `/api/v1/prediction/{chatflowId}`
+- Embedded chat widgets
+- Webhook integrations
+</Note>
+
+## Example Use Cases
+
+**Customer Support Bot**
+- Document Loader → Vector Store → Conversational Retrieval Chain
+- Includes chat memory for context retention
+
+**Document Q&A**
+- PDF Loader → OpenAI Embeddings → Pinecone → RetrievalQA Chain
+- Answers questions from uploaded documents
+
+**Conversational Assistant**
+- Chat Model + Conversation Memory + Tools
+- Maintains context across multiple interactions
+
+## Best Practices
+
+<Tip>
+- **Keep it Simple**: Start with basic flows and add complexity incrementally
+- **Test Thoroughly**: Validate edge cases before deployment
+- **Monitor Performance**: Use analytics to track token usage and response quality
+- **Version Control**: Save different versions as you iterate on designs
+</Tip>
+
+## Related Concepts
+
+- [Agentflows](/concepts/agentflows) - For more dynamic, autonomous workflows
+- [Nodes](/concepts/nodes) - Building blocks of chatflows
+- [Credentials](/concepts/credentials) - Managing API keys and authentication

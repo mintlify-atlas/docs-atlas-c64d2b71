@@ -1,0 +1,444 @@
+---
+title: Authentication
+description: Configure authentication and user management in Flowise
+---
+
+Flowise provides multiple authentication methods including JWT-based authentication, basic HTTP auth, and enterprise SSO options.
+
+## Authentication Methods
+
+### JWT Authentication
+
+Flowise uses JSON Web Tokens (JWT) for modern authentication with access and refresh token support.
+
+#### Configure JWT Secrets
+
+Generate secure random secrets for JWT tokens:
+
+```bash
+# Generate secrets
+openssl rand -hex 32  # Use for JWT_AUTH_TOKEN_SECRET
+openssl rand -hex 32  # Use for JWT_REFRESH_TOKEN_SECRET
+```
+
+Add to your `.env` file:
+
+```bash
+# JWT Configuration
+JWT_AUTH_TOKEN_SECRET=your_generated_secret_here
+JWT_REFRESH_TOKEN_SECRET=your_generated_refresh_secret_here
+JWT_ISSUER=Flowise
+JWT_AUDIENCE=Flowise
+```
+
+<Note>
+If you don't set `JWT_AUTH_TOKEN_SECRET` and `JWT_REFRESH_TOKEN_SECRET`, Flowise will automatically generate and store them securely in the filesystem or AWS Secrets Manager.
+</Note>
+
+#### JWT Token Configuration
+
+<ParamField path="JWT_AUTH_TOKEN_SECRET" type="string">
+  Secret key for signing access tokens. Auto-generated if not provided.
+</ParamField>
+
+<ParamField path="JWT_REFRESH_TOKEN_SECRET" type="string">
+  Secret key for signing refresh tokens. Auto-generated if not provided.
+</ParamField>
+
+<ParamField path="JWT_ISSUER" type="string" default="Flowise">
+  Token issuer claim (iss)
+</ParamField>
+
+<ParamField path="JWT_AUDIENCE" type="string" default="Flowise">
+  Token audience claim (aud)
+</ParamField>
+
+<ParamField path="JWT_TOKEN_EXPIRY_IN_MINUTES" type="number" default="360">
+  Access token lifetime in minutes (default: 6 hours)
+</ParamField>
+
+<ParamField path="JWT_REFRESH_TOKEN_EXPIRY_IN_MINUTES" type="number" default="43200">
+  Refresh token lifetime in minutes (default: 30 days)
+</ParamField>
+
+### Basic HTTP Authentication
+
+<Warning>
+Basic authentication is a legacy feature. For production deployments, use JWT authentication instead.
+</Warning>
+
+Set username and password for basic HTTP authentication:
+
+```bash
+FLOWISE_USERNAME=admin
+FLOWISE_PASSWORD=your_secure_password
+```
+
+<ParamField path="FLOWISE_USERNAME" type="string">
+  Username for basic HTTP authentication
+</ParamField>
+
+<ParamField path="FLOWISE_PASSWORD" type="string">
+  Password for basic HTTP authentication
+</ParamField>
+
+## Session Management
+
+### Express Session Configuration
+
+```bash
+# Generate session secret
+EXPRESS_SESSION_SECRET=$(openssl rand -hex 32)
+```
+
+<ParamField path="EXPRESS_SESSION_SECRET" type="string">
+  Secret for Express session cookie signing. Auto-generated if not provided.
+</ParamField>
+
+<ParamField path="SECURE_COOKIES" type="boolean">
+  Enable secure flag on cookies. Set to `true` for HTTPS deployments.
+  
+  ```bash
+  SECURE_COOKIES=true  # For HTTPS
+  ```
+</ParamField>
+
+### Token Management
+
+<ParamField path="TOKEN_HASH_SECRET" type="string">
+  Secret for hashing authentication tokens. Auto-generated if not provided.
+  
+  ```bash
+  TOKEN_HASH_SECRET=$(openssl rand -hex 32)
+  ```
+</ParamField>
+
+<ParamField path="EXPIRE_AUTH_TOKENS_ON_RESTART" type="boolean" default="false">
+  Force all users to re-authenticate when the application restarts
+  
+  ```bash
+  EXPIRE_AUTH_TOKENS_ON_RESTART=true
+  ```
+</ParamField>
+
+## User Management
+
+### Password Configuration
+
+<ParamField path="PASSWORD_SALT_HASH_ROUNDS" type="number" default="10">
+  Number of bcrypt salt rounds for password hashing. Higher values are more secure but slower.
+  
+  - `10`: Default (recommended for most use cases)
+  - `12`: Higher security
+  - `14`: Maximum security (slower)
+</ParamField>
+
+### Invitation & Password Reset
+
+<ParamField path="INVITE_TOKEN_EXPIRY_IN_HOURS" type="number" default="24">
+  Workspace invitation token validity period in hours
+  
+  ```bash
+  INVITE_TOKEN_EXPIRY_IN_HOURS=48  # 2 days
+  ```
+</ParamField>
+
+<ParamField path="PASSWORD_RESET_TOKEN_EXPIRY_IN_MINS" type="number" default="15">
+  Password reset token validity period in minutes
+  
+  ```bash
+  PASSWORD_RESET_TOKEN_EXPIRY_IN_MINS=30  # 30 minutes
+  ```
+</ParamField>
+
+## Secret Storage
+
+Flowise supports multiple storage backends for authentication secrets:
+
+### Local File Storage (Default)
+
+Secrets are stored in encrypted files on the local filesystem:
+
+```bash
+SECRETKEY_STORAGE_TYPE=local
+SECRETKEY_PATH=/path/to/secret/storage  # Default: ~/.flowise
+```
+
+<ParamField path="SECRETKEY_STORAGE_TYPE" type="string" default="local">
+  Storage backend for secrets. Options: `local`, `aws`
+</ParamField>
+
+<ParamField path="SECRETKEY_PATH" type="string" default="~/.flowise">
+  Local directory for storing secret keys when using `local` storage
+</ParamField>
+
+### AWS Secrets Manager
+
+For production deployments, use AWS Secrets Manager:
+
+```bash
+SECRETKEY_STORAGE_TYPE=aws
+SECRETKEY_AWS_ACCESS_KEY=AKIAIOSFODNN7EXAMPLE
+SECRETKEY_AWS_SECRET_KEY=wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY
+SECRETKEY_AWS_REGION=us-east-1
+SECRETKEY_AWS_NAME=FlowiseEncryptionKey
+SECRETKEY_AWS_AUTH_PREFIX=Flowise
+```
+
+<ParamField path="SECRETKEY_AWS_ACCESS_KEY" type="string">
+  AWS access key ID with permissions for Secrets Manager
+</ParamField>
+
+<ParamField path="SECRETKEY_AWS_SECRET_KEY" type="string">
+  AWS secret access key
+</ParamField>
+
+<ParamField path="SECRETKEY_AWS_REGION" type="string" default="us-west-2">
+  AWS region where secrets are stored
+</ParamField>
+
+<ParamField path="SECRETKEY_AWS_NAME" type="string" default="FlowiseEncryptionKey">
+  Name of the main encryption key secret in AWS Secrets Manager
+</ParamField>
+
+<ParamField path="SECRETKEY_AWS_AUTH_PREFIX" type="string" default="Flowise">
+  Prefix for auth-related secret names (e.g., `FlowiseTokenHashSecret`)
+</ParamField>
+
+<Note>
+When using AWS Secrets Manager, the following secrets are automatically created:
+- `{PREFIX}TokenHashSecret`
+- `{PREFIX}ExpressSessionSecret`
+- `{PREFIX}JWTAuthTokenSecret`
+- `{PREFIX}JWTRefreshTokenSecret`
+- `{PREFIX}JWTIssuer`
+- `{PREFIX}JWTAudience`
+</Note>
+
+### Required IAM Permissions
+
+If using AWS Secrets Manager, ensure your IAM user/role has these permissions:
+
+```json
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Effect": "Allow",
+      "Action": [
+        "secretsmanager:GetSecretValue",
+        "secretsmanager:CreateSecret",
+        "secretsmanager:UpdateSecret"
+      ],
+      "Resource": "arn:aws:secretsmanager:REGION:ACCOUNT:secret:Flowise*"
+    }
+  ]
+}
+```
+
+## Enterprise SSO (Enterprise Edition)
+
+<Note>
+SSO features require Flowise Enterprise Edition.
+</Note>
+
+Flowise Enterprise supports multiple SSO providers:
+
+- **Google OAuth 2.0**
+- **Microsoft Azure AD**
+- **Auth0**
+- **GitHub**
+
+SSO configuration is managed through the Admin UI under Settings > Login Methods.
+
+## Email Configuration for Auth
+
+Configure SMTP for sending authentication emails (verification, password reset, invitations):
+
+```bash
+# SMTP Configuration
+SMTP_HOST=smtp.gmail.com
+SMTP_PORT=465
+SMTP_USER=noreply@yourdomain.com
+SMTP_PASSWORD=your_app_password
+SMTP_SECURE=true
+SENDER_EMAIL=team@yourdomain.com
+```
+
+<ParamField path="SMTP_HOST" type="string">
+  SMTP server hostname
+</ParamField>
+
+<ParamField path="SMTP_PORT" type="number" default="465">
+  SMTP server port (465 for SSL, 587 for TLS)
+</ParamField>
+
+<ParamField path="SMTP_USER" type="string">
+  SMTP authentication username
+</ParamField>
+
+<ParamField path="SMTP_PASSWORD" type="string">
+  SMTP authentication password
+</ParamField>
+
+<ParamField path="SMTP_SECURE" type="boolean" default="true">
+  Use TLS/SSL for SMTP connection
+</ParamField>
+
+<ParamField path="SENDER_EMAIL" type="string">
+  From address for all authentication emails
+</ParamField>
+
+### Custom Email Templates
+
+<ParamField path="WORKSPACE_INVITE_TEMPLATE_PATH" type="string">
+  Path to custom Handlebars template for workspace invitation emails
+  
+  ```bash
+  WORKSPACE_INVITE_TEMPLATE_PATH=/path/to/templates/workspace_invite.hbs
+  ```
+</ParamField>
+
+## Security Best Practices
+
+### 1. Use Strong Secrets
+
+Always generate cryptographically secure random values:
+
+```bash
+# Generate 32-byte hex strings
+openssl rand -hex 32
+```
+
+### 2. Enable HTTPS
+
+For production, always use HTTPS and enable secure cookies:
+
+```bash
+APP_URL=https://flowise.yourdomain.com
+SECURE_COOKIES=true
+```
+
+### 3. Configure Token Expiry
+
+Set appropriate token expiration based on your security requirements:
+
+```bash
+# Shorter expiry for high-security environments
+JWT_TOKEN_EXPIRY_IN_MINUTES=60          # 1 hour
+JWT_REFRESH_TOKEN_EXPIRY_IN_MINUTES=1440  # 1 day
+```
+
+### 4. Use AWS Secrets Manager in Production
+
+For production deployments, store secrets in AWS Secrets Manager:
+
+```bash
+SECRETKEY_STORAGE_TYPE=aws
+SECRETKEY_AWS_REGION=us-east-1
+# AWS credentials via IAM role (recommended) or access keys
+```
+
+### 5. Rotate Secrets Regularly
+
+Implement a secret rotation policy:
+
+1. Generate new secrets
+2. Update environment variables
+3. Restart Flowise
+4. Optionally expire existing tokens with `EXPIRE_AUTH_TOKENS_ON_RESTART=true`
+
+## Testing Authentication
+
+### Verify Basic Auth
+
+```bash
+curl -u username:password http://localhost:3000/api/v1/account/basic-auth
+```
+
+### Get JWT Token
+
+```bash
+curl -X POST http://localhost:3000/api/v1/account/login \
+  -H "Content-Type: application/json" \
+  -d '{"email":"user@example.com","password":"password"}'
+```
+
+### Use JWT Token
+
+```bash
+curl http://localhost:3000/api/v1/chatflows \
+  -H "Authorization: Bearer YOUR_JWT_TOKEN"
+```
+
+## Troubleshooting
+
+### Invalid or Expired Token
+
+**Problem**: Users get logged out unexpectedly
+
+**Solutions**:
+- Check `JWT_TOKEN_EXPIRY_IN_MINUTES` is appropriate
+- Ensure system clocks are synchronized (JWT uses timestamps)
+- Verify `JWT_AUTH_TOKEN_SECRET` hasn't changed
+
+### SMTP Connection Failed
+
+**Problem**: Email invitations not sending
+
+**Solutions**:
+- Verify SMTP credentials are correct
+- Check firewall allows outbound connections on SMTP port
+- For Gmail, use App Passwords instead of account password
+- Test SMTP settings:
+
+```bash
+DEBUG=true LOG_LEVEL=debug
+```
+
+### AWS Secrets Manager Access Denied
+
+**Problem**: Cannot read/write secrets in AWS
+
+**Solutions**:
+- Verify IAM permissions (see Required IAM Permissions above)
+- Check AWS credentials are valid
+- Ensure region is correct
+- Verify secret names match the prefix pattern
+
+## Example Production Configuration
+
+```bash
+# Production Authentication Setup
+
+# JWT Configuration (auto-generated, stored in AWS)
+SECRETKEY_STORAGE_TYPE=aws
+SECRETKEY_AWS_REGION=us-east-1
+SECRETKEY_AWS_AUTH_PREFIX=FlowiseProd
+
+# Token Expiry
+JWT_TOKEN_EXPIRY_IN_MINUTES=120
+JWT_REFRESH_TOKEN_EXPIRY_IN_MINUTES=10080
+EXPIRE_AUTH_TOKENS_ON_RESTART=false
+
+# Session Security
+SECURE_COOKIES=true
+
+# Password Security
+PASSWORD_SALT_HASH_ROUNDS=12
+
+# Email Configuration
+SMTP_HOST=smtp.sendgrid.net
+SMTP_PORT=587
+SMTP_USER=apikey
+SMTP_PASSWORD=${SENDGRID_API_KEY}
+SMTP_SECURE=true
+SENDER_EMAIL=noreply@yourdomain.com
+
+# Token Expiry
+INVITE_TOKEN_EXPIRY_IN_HOURS=24
+PASSWORD_RESET_TOKEN_EXPIRY_IN_MINS=15
+
+# Application URL
+APP_URL=https://flowise.yourdomain.com
+```

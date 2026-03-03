@@ -1,0 +1,358 @@
+---
+title: 'Ollama'
+description: 'Run open-source LLMs locally with Llama 2, Mistral, CodeLlama and more'
+icon: 'server'
+---
+
+## Overview
+
+Ollama integration allows you to run open-source large language models locally on your machine. Perfect for development, privacy-sensitive applications, and offline usage.
+
+## Setup
+
+<Steps>
+  <Step title="Install Ollama">
+    Download and install Ollama from [ollama.ai](https://ollama.ai)
+    
+    ```bash
+    # macOS / Linux
+    curl https://ollama.ai/install.sh | sh
+    
+    # Windows - download installer
+    ```
+  </Step>
+  
+  <Step title="Pull a Model">
+    Download a model to use:
+    
+    ```bash
+    # Pull Llama 2
+    ollama pull llama2
+    
+    # Or Mistral
+    ollama pull mistral
+    
+    # Or CodeLlama
+    ollama pull codellama
+    ```
+  </Step>
+  
+  <Step title="Verify Ollama is Running">
+    Ensure Ollama is accessible:
+    
+    ```bash
+    curl http://localhost:11434
+    ```
+  </Step>
+  
+  <Step title="Add to Flowise">
+    Drag the **ChatOllama** node from Chat Models category to your canvas
+  </Step>
+</Steps>
+
+## Configuration
+
+### Basic Parameters
+
+<ParamField path="baseUrl" type="string" default="http://localhost:11434" required>
+  URL where Ollama is running. Use default for local installation
+</ParamField>
+
+<ParamField path="modelName" type="string" required>
+  Name of the model to use. Must match a pulled model:
+  - `llama2` - Meta's Llama 2 (7B, 13B, 70B variants)
+  - `llama2:13b` - Specific size variant
+  - `mistral` - Mistral 7B
+  - `mixtral` - Mixtral 8x7B MoE
+  - `codellama` - Code-specialized Llama
+  - `phi` - Microsoft Phi-2
+  - `gemma` - Google Gemma
+  - `vicuna` - Vicuna chat model
+</ParamField>
+
+<ParamField path="temperature" type="number" default={0.9}>
+  Sampling temperature (0.0 to 2.0). Lower = more focused, higher = more creative
+</ParamField>
+
+<ParamField path="streaming" type="boolean" default={true}>
+  Enable token streaming for real-time responses
+</ParamField>
+
+### Advanced Parameters
+
+<ParamField path="topP" type="number">
+  Nucleus sampling threshold (0.0 to 1.0). Higher = more diverse text
+</ParamField>
+
+<ParamField path="topK" type="number">
+  Limit token selection to top K options. Lower = more conservative
+</ParamField>
+
+<ParamField path="mirostat" type="number">
+  Enable Mirostat sampling for controlling perplexity:
+  - `0` - Disabled (default)
+  - `1` - Mirostat 1.0
+  - `2` - Mirostat 2.0
+</ParamField>
+
+<ParamField path="mirostatEta" type="number" default={0.1}>
+  Mirostat learning rate. Controls how quickly algorithm responds to feedback
+</ParamField>
+
+<ParamField path="mirostatTau" type="number" default={5.0}>
+  Mirostat target perplexity. Controls coherence vs diversity balance
+</ParamField>
+
+### Context & Performance
+
+<ParamField path="numCtx" type="number" default={2048}>
+  Context window size. Larger = more memory but better long conversations
+</ParamField>
+
+<ParamField path="numGpu" type="number">
+  Number of GPU layers to use. On macOS defaults to 1 (Metal), 0 to disable GPU
+</ParamField>
+
+<ParamField path="numThread" type="number">
+  Number of CPU threads. Defaults to optimal. Set to physical CPU cores for best performance
+</ParamField>
+
+<ParamField path="repeatLastN" type="number" default={64}>
+  How far back to look for repetition prevention (0 = disabled, -1 = num_ctx)
+</ParamField>
+
+<ParamField path="repeatPenalty" type="number" default={1.1}>
+  Penalize repetitions (1.0 = no penalty, 1.5 = strong penalty)
+</ParamField>
+
+<ParamField path="tfsZ" type="number" default={1.0}>
+  Tail free sampling. Higher = reduced impact of low probability tokens
+</ParamField>
+
+### Additional Options
+
+<ParamField path="keepAlive" type="string" default="5m">
+  How long to keep model loaded. Duration string like "10m" or "24h"
+</ParamField>
+
+<ParamField path="stop" type="string">
+  Stop sequences (comma-separated). Generation stops when these appear
+</ParamField>
+
+<ParamField path="jsonMode" type="boolean">
+  Force model to output only JSON. Specify JSON format in system prompt
+</ParamField>
+
+### Vision Models
+
+<ParamField path="allowImageUploads" type="boolean" default={false}>
+  Enable for vision-capable models like `llava` or `bakllava`
+</ParamField>
+
+### Authentication
+
+<ParamField path="credential" type="credential">
+  Optional Ollama API key credential if authentication is enabled
+</ParamField>
+
+## Usage Examples
+
+### Basic Local Setup
+
+```typescript
+// Simple Llama 2 chat
+Base URL: http://localhost:11434
+Model Name: llama2
+Temperature: 0.7
+Context Window Size: 4096
+```
+
+### Code Generation
+
+```typescript
+// Optimized for coding
+Base URL: http://localhost:11434
+Model Name: codellama
+Temperature: 0.2
+Top P: 0.95
+Context Window Size: 8192
+```
+
+### JSON Mode
+
+```typescript
+// Force JSON output
+Base URL: http://localhost:11434
+Model Name: mistral
+JSON Mode: true
+Temperature: 0.1
+
+// System prompt:
+"Return all responses as JSON object with 'answer' and 'confidence' fields"
+```
+
+### Vision Model
+
+```bash
+# First pull a vision model
+ollama pull llava
+```
+
+```typescript
+// In Flowise
+Model Name: llava
+Allow Image Uploads: true
+Temperature: 0.4
+```
+
+### Remote Ollama Server
+
+```typescript
+// Connect to Ollama on another machine
+Base URL: http://192.168.1.100:11434
+Model Name: llama2
+Keep Alive: 30m
+```
+
+## Available Models
+
+### Popular Models
+
+| Model | Size | Use Case | GPU Memory |
+|-------|------|----------|------------|
+| llama2 | 7B | General chat | ~8GB |
+| llama2:13b | 13B | Better reasoning | ~16GB |
+| llama2:70b | 70B | Highest quality | ~64GB |
+| mistral | 7B | Fast, capable | ~8GB |
+| mixtral | 47B | MoE, very capable | ~48GB |
+| codellama | 7B/13B/34B | Code generation | ~8-40GB |
+| phi | 2.7B | Small, efficient | ~4GB |
+| gemma | 2B/7B | Google's model | ~4-8GB |
+| llava | 7B | Vision + text | ~8GB |
+
+### Find More Models
+
+Browse the [Ollama Library](https://ollama.ai/library) for 100+ models.
+
+## Performance Optimization
+
+<CardGroup cols={2}>
+  <Card title="GPU Acceleration" icon="microchip">
+    - Set `numGpu` to offload layers
+    - Use CUDA on NVIDIA GPUs
+    - Use Metal on Apple Silicon
+    - Monitor GPU memory usage
+  </Card>
+  
+  <Card title="Memory Management" icon="memory">
+    - Reduce `numCtx` if OOM errors
+    - Use smaller model variants
+    - Adjust `keepAlive` to free memory
+    - Use quantized models (Q4, Q5)
+  </Card>
+  
+  <Card title="Speed" icon="bolt">
+    - Use smaller models (7B vs 70B)
+    - Reduce context window
+    - Enable GPU acceleration
+    - Set `numThread` to CPU cores
+  </Card>
+  
+  <Card title="Quality" icon="star">
+    - Use larger models when possible
+    - Increase context window
+    - Fine-tune temperature
+    - Use appropriate model for task
+  </Card>
+</CardGroup>
+
+## Best Practices
+
+1. **Model Selection**
+   - Start with 7B models for testing
+   - Use code-specific models for programming tasks
+   - Consider model size vs. available RAM/VRAM
+
+2. **Resource Management**
+   - Set appropriate `keepAlive` duration
+   - Monitor system resources
+   - Use GPU when available
+   - Close unused models
+
+3. **Prompt Engineering**
+   - Be specific and clear
+   - Use system prompts effectively
+   - Provide examples for better results
+   - Test with different temperatures
+
+4. **Production Deployment**
+   - Use dedicated GPU server
+   - Set up load balancing for multiple instances
+   - Monitor performance metrics
+   - Consider model quantization for speed
+
+## Common Issues
+
+<AccordionGroup>
+  <Accordion title="Connection Refused">
+    If Flowise can't connect to Ollama:
+    - Verify Ollama is running: `ollama list`
+    - Check the base URL is correct
+    - Ensure firewall allows port 11434
+    - Try: `ollama serve` to start manually
+  </Accordion>
+  
+  <Accordion title="Model Not Found">
+    Error: "model 'modelname' not found"
+    - Pull the model first: `ollama pull modelname`
+    - Check exact model name: `ollama list`
+    - Ensure spelling matches exactly
+  </Accordion>
+  
+  <Accordion title="Out of Memory">
+    If getting OOM errors:
+    - Use smaller model variant (7B instead of 13B)
+    - Reduce `numCtx` parameter
+    - Close other applications
+    - Use quantized models (Q4_0)
+    - Reduce `numGpu` to use CPU more
+  </Accordion>
+  
+  <Accordion title="Slow Performance">
+    To improve speed:
+    - Enable GPU acceleration
+    - Use smaller models
+    - Reduce context window
+    - Set `numThread` to your CPU cores
+    - Use quantized models
+  </Accordion>
+</AccordionGroup>
+
+## Ollama Commands Reference
+
+```bash
+# List downloaded models
+ollama list
+
+# Pull a new model
+ollama pull llama2
+
+# Run model in terminal
+ollama run llama2
+
+# Remove a model
+ollama rm llama2
+
+# Show model info
+ollama show llama2
+
+# Start Ollama service
+ollama serve
+```
+
+## Related Resources
+
+- [Ollama Official Site](https://ollama.ai)
+- [Model Library](https://ollama.ai/library)
+- [Ollama GitHub](https://github.com/ollama/ollama)
+- [Model Cards & Docs](https://ollama.ai/library)

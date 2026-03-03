@@ -1,0 +1,452 @@
+---
+title: 'Qdrant'
+description: 'High-performance vector search engine written in Rust with rich filtering capabilities'
+icon: 'magnifying-glass'
+---
+
+## Overview
+
+Qdrant is a vector similarity search engine written in Rust that provides high performance, rich filtering, and advanced features like payload-based filtering and hybrid search.
+
+## Setup
+
+<Tabs>
+  <Tab title="Local Docker">
+    Run Qdrant locally with Docker:
+    
+    ```bash
+    docker run -p 6333:6333 qdrant/qdrant
+    ```
+    
+    Then in Flowise:
+    ```typescript
+    Qdrant Server URL: http://localhost:6333
+    Collection Name: my-collection
+    ```
+  </Tab>
+  
+  <Tab title="Qdrant Cloud">
+    1. Sign up at [Qdrant Cloud](https://cloud.qdrant.io)
+    2. Create a cluster and get your URL and API key
+    3. Add Qdrant API credential in Flowise
+    4. Configure:
+    
+    ```typescript
+    Qdrant Server URL: https://xyz-example.cloud.qdrant.io
+    Credential: Qdrant API Key
+    Collection Name: my-collection
+    ```
+  </Tab>
+  
+  <Tab title="Self-Hosted">
+    Install Qdrant server:
+    
+    ```bash
+    # Download binary
+    wget https://github.com/qdrant/qdrant/releases/download/v1.7.0/qdrant
+    
+    # Run
+    ./qdrant
+    ```
+    
+    Or use Docker Compose for production.
+  </Tab>
+</Tabs>
+
+## Configuration
+
+### Required Parameters
+
+<ParamField path="qdrantServerUrl" type="string" required>
+  URL of your Qdrant instance:
+  - Local: `http://localhost:6333`
+  - Cloud: `https://your-cluster.cloud.qdrant.io`
+</ParamField>
+
+<ParamField path="qdrantCollection" type="string" required>
+  Name of the collection to use (created automatically if doesn't exist)
+</ParamField>
+
+<ParamField path="embeddings" type="Embeddings" required>
+  Embedding model for vector generation
+</ParamField>
+
+### Optional Parameters
+
+<ParamField path="credential" type="credential">
+  Qdrant API key credential (required for Qdrant Cloud)
+</ParamField>
+
+<ParamField path="document" type="Document[]">
+  Documents to upsert into the collection
+</ParamField>
+
+<ParamField path="recordManager" type="RecordManager">
+  Track indexed documents to prevent duplication
+</ParamField>
+
+<ParamField path="qdrantVectorDimension" type="number" default={1536}>
+  Vector dimension size (must match embedding model):
+  - OpenAI ada-002: 1536
+  - OpenAI text-embedding-3-small: 1536
+  - OpenAI text-embedding-3-large: 3072
+</ParamField>
+
+<ParamField path="qdrantSimilarity" type="string" default="Cosine">
+  Distance metric for similarity:
+  - `Cosine` - Normalized similarity (recommended)
+  - `Euclid` - Euclidean distance
+  - `Dot` - Dot product
+</ParamField>
+
+<ParamField path="contentPayloadKey" type="string" default="content">
+  Key for storing document content in payload
+</ParamField>
+
+<ParamField path="metadataPayloadKey" type="string" default="metadata">
+  Key for storing document metadata in payload
+</ParamField>
+
+<ParamField path="batchSize" type="number">
+  Batch size for upserting vectors. Useful for large datasets:
+  ```typescript
+  batchSize: 100  // Process 100 vectors at a time
+  ```
+</ParamField>
+
+<ParamField path="qdrantCollectionConfiguration" type="json">
+  Advanced collection configuration (see Qdrant docs):
+  ```json
+  {
+    "optimizers_config": {
+      "indexing_threshold": 10000
+    }
+  }
+  ```
+</ParamField>
+
+<ParamField path="qdrantFilter" type="json">
+  Filter search results by payload:
+  ```json
+  {
+    "must": [
+      { "key": "category", "match": { "value": "docs" } }
+    ]
+  }
+  ```
+</ParamField>
+
+<ParamField path="topK" type="number" default={4}>
+  Number of results to return
+</ParamField>
+
+<ParamField path="fileUpload" type="boolean">
+  Enable file uploads scoped to chat session
+</ParamField>
+
+## Usage Examples
+
+### Basic Local Setup
+
+```bash
+# Start Qdrant
+docker run -p 6333:6333 -v $(pwd)/qdrant_storage:/qdrant/storage qdrant/qdrant
+```
+
+```typescript
+// In Flowise
+Qdrant Server URL: http://localhost:6333
+Qdrant Collection: my-documents
+Vector Dimension: 1536
+Similarity: Cosine
+Embeddings: OpenAI Embeddings
+```
+
+### Qdrant Cloud Production
+
+```typescript
+// Cloud configuration
+Qdrant Server URL: https://abc-example.cloud.qdrant.io
+Credential: Qdrant API Key
+Qdrant Collection: production-kb
+Vector Dimension: 1536
+Similarity: Cosine
+```
+
+### Batch Upsert for Large Datasets
+
+```typescript
+// Process large document sets efficiently
+Document: PDF Folder Loader (1000+ files)
+Qdrant Collection: large-corpus
+Batch Size: 100
+Vector Dimension: 1536
+Embeddings: OpenAI Embeddings
+```
+
+### With Advanced Filtering
+
+```json
+// Complex filter conditions
+{
+  "qdrantFilter": {
+    "must": [
+      {
+        "key": "metadata.category",
+        "match": { "value": "technical" }
+      },
+      {
+        "key": "metadata.year",
+        "range": {
+          "gte": 2023
+        }
+      }
+    ],
+    "should": [
+      {
+        "key": "metadata.priority",
+        "match": { "value": "high" }
+      }
+    ]
+  }
+}
+```
+
+### Custom Payload Keys
+
+```typescript
+// Customize storage structure
+Content Payload Key: text_content
+Metadata Payload Key: doc_metadata
+Vector Dimension: 1536
+```
+
+## Qdrant Filter Syntax
+
+Qdrant supports powerful filtering:
+
+```json
+// Must conditions (AND)
+{
+  "must": [
+    { "key": "category", "match": { "value": "docs" } },
+    { "key": "language", "match": { "value": "en" } }
+  ]
+}
+
+// Range filters
+{
+  "must": [
+    {
+      "key": "price",
+      "range": {
+        "gte": 10.0,
+        "lt": 100.0
+      }
+    }
+  ]
+}
+
+// Should conditions (OR)
+{
+  "should": [
+    { "key": "tag", "match": { "value": "important" } },
+    { "key": "tag", "match": { "value": "urgent" } }
+  ]
+}
+
+// Must NOT conditions
+{
+  "must_not": [
+    { "key": "status", "match": { "value": "archived" } }
+  ]
+}
+
+// Nested conditions
+{
+  "must": [
+    {
+      "should": [
+        { "key": "type", "match": { "value": "article" } },
+        { "key": "type", "match": { "value": "blog" } }
+      ]
+    },
+    { "key": "published", "match": { "value": true } }
+  ]
+}
+
+// Array matching
+{
+  "must": [
+    {
+      "key": "tags",
+      "match": {
+        "any": ["AI", "ML", "NLP"]
+      }
+    }
+  ]
+}
+```
+
+## Best Practices
+
+<CardGroup cols={2}>
+  <Card title="Collection Design" icon="sitemap">
+    - Create separate collections per domain
+    - Use descriptive collection names
+    - Set appropriate vector dimensions
+    - Choose right distance metric
+  </Card>
+  
+  <Card title="Performance" icon="rocket">
+    - Use batch upserts for large datasets
+    - Enable indexing for frequent filters
+    - Monitor collection size
+    - Use appropriate batch sizes
+  </Card>
+  
+  <Card title="Filtering" icon="filter">
+    - Index frequently filtered fields
+    - Use payload schema for validation
+    - Combine filters efficiently
+    - Test filter performance
+  </Card>
+  
+  <Card title="Scaling" icon="chart-line">
+    - Use Qdrant Cloud for production
+    - Monitor memory usage
+    - Implement sharding for huge datasets
+    - Set up replicas for HA
+  </Card>
+</CardGroup>
+
+## Advanced Features
+
+### Payload Schema
+
+Define schema for validation:
+
+```json
+{
+  "qdrantCollectionConfiguration": {
+    "payload_schema": {
+      "category": { "type": "keyword" },
+      "year": { "type": "integer" },
+      "rating": { "type": "float" }
+    }
+  }
+}
+```
+
+### Optimizer Configuration
+
+```json
+{
+  "qdrantCollectionConfiguration": {
+    "optimizers_config": {
+      "deleted_threshold": 0.2,
+      "vacuum_min_vector_number": 1000,
+      "default_segment_number": 5,
+      "indexing_threshold": 20000
+    }
+  }
+}
+```
+
+### Quantization for Memory Efficiency
+
+```json
+{
+  "qdrantCollectionConfiguration": {
+    "quantization_config": {
+      "scalar": {
+        "type": "int8",
+        "quantile": 0.99
+      }
+    }
+  }
+}
+```
+
+## Common Issues
+
+<AccordionGroup>
+  <Accordion title="Connection Failed">
+    Can't connect to Qdrant server
+    
+    **Solution:**
+    - Verify Qdrant is running: `curl http://localhost:6333`
+    - Check URL format includes http/https
+    - For cloud: verify API key is correct
+    - Check firewall/network settings
+  </Accordion>
+  
+  <Accordion title="Dimension Mismatch">
+    Error: "Vector dimension does not match collection"
+    
+    **Solution:**
+    - Set correct vector dimension parameter
+    - Ensure embeddings match dimension
+    - Delete and recreate collection if needed
+    - Verify embedding model configuration
+  </Accordion>
+  
+  <Accordion title="Collection Already Exists">
+    Error when creating collection
+    
+    **Solution:**
+    - Collections are auto-created, this is normal
+    - Use existing collection or delete old one
+    - Check if dimension/metric matches
+  </Accordion>
+  
+  <Accordion title="Slow Queries">
+    Search is taking too long
+    
+    **Solution:**
+    - Create indexes on filtered fields
+    - Reduce topK value
+    - Use more restrictive filters
+    - Consider quantization
+    - Check collection size and resources
+  </Accordion>
+</AccordionGroup>
+
+## Monitoring
+
+Qdrant provides telemetry and monitoring:
+
+```bash
+# Health check
+curl http://localhost:6333/healthz
+
+# Collection info
+curl http://localhost:6333/collections/my-collection
+
+# Cluster info
+curl http://localhost:6333/cluster
+```
+
+Metrics to monitor:
+- **Vector count** per collection
+- **Query latency** (p50, p95, p99)
+- **Memory usage**
+- **Disk usage**
+- **Indexing status**
+
+## Outputs
+
+<ParamField path="retriever" type="VectorStoreRetriever">
+  Retriever interface with configured filters and topK
+</ParamField>
+
+<ParamField path="vectorStore" type="QdrantVectorStore">
+  Direct vector store for custom operations
+</ParamField>
+
+## Related Resources
+
+- [Qdrant Documentation](https://qdrant.tech/documentation)
+- [Qdrant Cloud](https://cloud.qdrant.io)
+- [Filtering Guide](https://qdrant.tech/documentation/concepts/filtering)
+- [Performance Tuning](https://qdrant.tech/documentation/guides/optimize)

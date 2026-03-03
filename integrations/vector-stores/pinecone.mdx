@@ -1,0 +1,339 @@
+---
+title: 'Pinecone'
+description: 'Fully managed vector database for high-performance similarity search at scale'
+icon: 'database'
+---
+
+## Overview
+
+Pinecone is a fully managed vector database designed for high-performance similarity search. It provides ultra-low latency, high availability, and easy scaling without infrastructure management.
+
+## Setup
+
+<Steps>
+  <Step title="Create Pinecone Account">
+    Sign up at [Pinecone Console](https://app.pinecone.io)
+  </Step>
+  
+  <Step title="Create an Index">
+    Create a new index with:
+    - Index name (e.g., `flowise-docs`)
+    - Dimensions (must match your embedding model, e.g., 1536 for OpenAI)
+    - Metric (cosine, euclidean, or dotproduct)
+  </Step>
+  
+  <Step title="Get API Key">
+    Copy your API key from the Pinecone console
+  </Step>
+  
+  <Step title="Add to Flowise">
+    Create a Pinecone API credential in Flowise with your API key
+  </Step>
+</Steps>
+
+## Configuration
+
+### Required Parameters
+
+<ParamField path="credential" type="credential" required>
+  Pinecone API key credential
+</ParamField>
+
+<ParamField path="pineconeIndex" type="string" required>
+  Name of your Pinecone index (must be created beforehand)
+</ParamField>
+
+<ParamField path="embeddings" type="Embeddings" required>
+  Embedding model to convert text to vectors (e.g., OpenAI Embeddings)
+</ParamField>
+
+### Optional Parameters
+
+<ParamField path="document" type="Document[]">
+  Documents to upsert into the vector store
+</ParamField>
+
+<ParamField path="recordManager" type="RecordManager">
+  Track records to prevent duplication during indexing
+</ParamField>
+
+<ParamField path="pineconeNamespace" type="string">
+  Namespace for organizing vectors within an index. Useful for multi-tenancy:
+  ```typescript
+  pineconeNamespace: "user-123"
+  pineconeNamespace: "production"
+  ```
+</ParamField>
+
+<ParamField path="pineconeTextKey" type="string" default="text">
+  Metadata key for storing the document text content
+</ParamField>
+
+<ParamField path="pineconeMetadataFilter" type="json">
+  Filter results by metadata during queries:
+  ```json
+  {
+    "category": "documentation",
+    "year": { "$gte": 2023 }
+  }
+  ```
+</ParamField>
+
+<ParamField path="topK" type="number" default={4}>
+  Number of most similar results to return
+</ParamField>
+
+<ParamField path="fileUpload" type="boolean">
+  Allow file uploads in chat, automatically scoped to chat session
+</ParamField>
+
+### MMR (Maximal Marginal Relevance)
+
+<ParamField path="searchType" type="string" default="similarity">
+  Search algorithm:
+  - `similarity` - Standard cosine similarity
+  - `mmr` - Maximize diversity while maintaining relevance
+</ParamField>
+
+<ParamField path="fetchK" type="number" default={20}>
+  Number of documents to fetch before MMR reranking (only when using MMR)
+</ParamField>
+
+<ParamField path="lambda" type="number" default={0.5}>
+  MMR diversity factor (0 = max diversity, 1 = max relevance)
+</ParamField>
+
+## Usage Examples
+
+### Basic Setup
+
+```typescript
+// Create index in Pinecone console first
+// Name: flowise-kb
+// Dimensions: 1536 (for OpenAI embeddings)
+// Metric: cosine
+
+// In Flowise node:
+Pinecone Index: flowise-kb
+Embeddings: OpenAI Embeddings
+Top K: 4
+```
+
+### With Namespaces
+
+```typescript
+// Multi-tenant setup
+Pinecone Index: shared-index
+Pinecone Namespace: customer-abc
+Embeddings: OpenAI Embeddings
+
+// Different namespace for another customer
+Pinecone Namespace: customer-xyz
+```
+
+### Metadata Filtering
+
+```json
+// Only search recent documentation
+{
+  "pineconeMetadataFilter": {
+    "source": "docs",
+    "updated_at": { "$gte": "2024-01-01" }
+  }
+}
+```
+
+### With MMR for Diversity
+
+```typescript
+// Get diverse results
+Search Type: mmr
+Fetch K: 20
+Lambda: 0.5
+Top K: 5
+```
+
+### With Record Manager
+
+```typescript
+// Prevent duplicate indexing
+Document: PDF Loader output
+Embeddings: OpenAI Embeddings
+Record Manager: Postgres Record Manager
+Pinecone Index: documents
+
+// Record manager tracks what's been indexed
+// Updates only changed documents
+```
+
+## Metadata Filter Syntax
+
+Pinecone supports rich metadata filtering:
+
+```json
+// Equality
+{ "category": "tutorial" }
+
+// Comparison operators
+{
+  "price": { "$gte": 10, "$lte": 50 },
+  "rating": { "$gt": 4.0 }
+}
+
+// Array membership
+{ "tags": { "$in": ["AI", "ML"] } }
+
+// Logical operators
+{
+  "$and": [
+    { "category": "docs" },
+    { "year": { "$gte": 2023 } }
+  ]
+}
+
+{
+  "$or": [
+    { "priority": "high" },
+    { "urgent": true }
+  ]
+}
+```
+
+## Best Practices
+
+<CardGroup cols={2}>
+  <Card title="Index Design" icon="sitemap">
+    - Create one index per use case
+    - Use namespaces for multi-tenancy
+    - Match dimensions to embedding model
+    - Choose appropriate distance metric
+  </Card>
+  
+  <Card title="Performance" icon="rocket">
+    - Use metadata filtering to reduce search space
+    - Batch upserts for efficiency
+    - Monitor query latency
+    - Use appropriate pod type
+  </Card>
+  
+  <Card title="Cost Optimization" icon="dollar-sign">
+    - Delete old vectors periodically
+    - Use namespaces instead of multiple indexes
+    - Right-size your pod type
+    - Monitor storage usage
+  </Card>
+  
+  <Card title="Data Management" icon="database">
+    - Use record manager to avoid duplicates
+    - Set up backup/export strategy
+    - Tag vectors with metadata
+    - Implement soft deletes if needed
+  </Card>
+</CardGroup>
+
+## Index Configuration Guide
+
+### Choosing Dimensions
+
+Dimensions must match your embedding model:
+
+| Embedding Model | Dimensions |
+|----------------|------------|
+| OpenAI text-embedding-ada-002 | 1536 |
+| OpenAI text-embedding-3-small | 512 or 1536 |
+| OpenAI text-embedding-3-large | 256, 1024, or 3072 |
+| Cohere embed-english-v3.0 | 1024 |
+| Cohere embed-multilingual-v3.0 | 1024 |
+
+### Distance Metrics
+
+- **Cosine** - Best for most use cases, normalized similarity
+- **Euclidean** - Absolute distance, good for specific domains  
+- **Dot Product** - Fast, assumes normalized vectors
+
+### Pod Types
+
+- **s1** - Storage-optimized (large datasets, lower cost)
+- **p1** - Performance-optimized (lowest latency)
+- **p2** - High-performance (very large scale)
+
+## Outputs
+
+The Pinecone node provides two outputs:
+
+<ParamField path="retriever" type="VectorStoreRetriever">
+  Use as a retriever in chains and agents. Automatically handles similarity search.
+</ParamField>
+
+<ParamField path="vectorStore" type="PineconeVectorStore">
+  Direct vector store access for custom operations like adding/deleting vectors.
+</ParamField>
+
+## Common Issues
+
+<AccordionGroup>
+  <Accordion title="Dimension Mismatch">
+    Error: "Vector dimension does not match index dimension"
+    
+    **Solution:**
+    - Ensure embedding model dimensions match index
+    - Create new index with correct dimensions
+    - Check embedding configuration
+  </Accordion>
+  
+  <Accordion title="Index Not Found">
+    Error: "Index 'name' not found"
+    
+    **Solution:**
+    - Verify index exists in Pinecone console
+    - Check index name spelling (case-sensitive)
+    - Ensure index is in 'Ready' state
+    - Wait for index initialization to complete
+  </Accordion>
+  
+  <Accordion title="Namespace Issues">
+    Empty results despite having data
+    
+    **Solution:**
+    - Check namespace spelling
+    - Verify data was inserted into correct namespace
+    - Try querying without namespace filter
+    - Use Pinecone console to inspect data
+  </Accordion>
+  
+  <Accordion title="Metadata Filter Not Working">
+    Results ignore metadata filter
+    
+    **Solution:**
+    - Ensure metadata was included during upsert
+    - Check JSON syntax in filter
+    - Verify metadata key names match
+    - Test with simpler filter first
+  </Accordion>
+</AccordionGroup>
+
+## Monitoring & Maintenance
+
+In the Pinecone console, monitor:
+
+- **Vector count** - Track total vectors per namespace
+- **Query latency** - p50, p95, p99 percentiles  
+- **Storage usage** - Plan capacity
+- **Request rate** - API usage patterns
+
+## Scaling Considerations
+
+<Note>
+Pinecone automatically scales, but consider:
+- **Pod count** - Increase for more QPS
+- **Pod type** - Upgrade for better performance
+- **Replicas** - Add for high availability
+- **Namespaces** - Use for logical separation
+</Note>
+
+## Related Resources
+
+- [Pinecone Documentation](https://docs.pinecone.io)
+- [Quickstart Guide](https://docs.pinecone.io/docs/quickstart)
+- [Metadata Filtering](https://docs.pinecone.io/docs/metadata-filtering)
+- [Namespaces Guide](https://docs.pinecone.io/docs/namespaces)

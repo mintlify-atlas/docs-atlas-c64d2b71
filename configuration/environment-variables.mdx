@@ -1,0 +1,523 @@
+---
+title: Environment Variables
+description: Complete reference for all Flowise environment variables
+---
+
+Flowise provides extensive configuration through environment variables. This guide covers all available options organized by category.
+
+## Server Configuration
+
+<ParamField path="PORT" type="number" default="3000">
+  Port number for the Flowise server to listen on
+</ParamField>
+
+<ParamField path="APP_URL" type="string" default="http://localhost:3000">
+  Base URL of your Flowise application, used for generating links in emails and SSO callbacks
+</ParamField>
+
+<ParamField path="NUMBER_OF_PROXIES" type="number" default="1">
+  Number of proxies between client and server. Used for proper IP address resolution
+</ParamField>
+
+<ParamField path="TRUST_PROXY" type="string" default="false">
+  Trust proxy configuration for Express. Can be `true`, `false`, `1`, `loopback`, `linklocal`, `uniquelocal`, IP addresses, or comma-separated combinations
+</ParamField>
+
+<ParamField path="CORS_ORIGINS" type="string" default="*">
+  Comma-separated list of allowed CORS origins. Use `*` to allow all origins
+</ParamField>
+
+<ParamField path="IFRAME_ORIGINS" type="string" default="*">
+  Comma-separated list of allowed iframe origins. Use `*` to allow all origins
+</ParamField>
+
+<ParamField path="FLOWISE_FILE_SIZE_LIMIT" type="string" default="50mb">
+  Maximum file upload size (e.g., `50mb`, `100mb`)
+</ParamField>
+
+## Database Configuration
+
+Flowise supports SQLite (default), PostgreSQL, MySQL, and MariaDB.
+
+<ParamField path="DATABASE_TYPE" type="string" default="sqlite">
+  Database type. Options: `sqlite`, `postgres`, `mysql`, `mariadb`
+</ParamField>
+
+<ParamField path="DATABASE_PATH" type="string" default="~/.flowise">
+  Path where the SQLite database file will be stored. Only used when `DATABASE_TYPE=sqlite`
+</ParamField>
+
+### PostgreSQL / MySQL / MariaDB Configuration
+
+<ParamField path="DATABASE_HOST" type="string">
+  Database server hostname or IP address
+</ParamField>
+
+<ParamField path="DATABASE_PORT" type="number" default="5432 (postgres) | 3306 (mysql/mariadb)">
+  Database server port
+</ParamField>
+
+<ParamField path="DATABASE_NAME" type="string" default="flowise">
+  Name of the database to use
+</ParamField>
+
+<ParamField path="DATABASE_USER" type="string" default="root">
+  Database username
+</ParamField>
+
+<ParamField path="DATABASE_PASSWORD" type="string">
+  Database password
+</ParamField>
+
+### Database SSL Configuration
+
+<ParamField path="DATABASE_SSL" type="boolean" default="false">
+  Enable SSL connection to database
+</ParamField>
+
+<ParamField path="DATABASE_REJECT_UNAUTHORIZED" type="boolean" default="true">
+  Whether to reject unauthorized SSL certificates
+</ParamField>
+
+<ParamField path="DATABASE_SSL_KEY_BASE64" type="string">
+  Self-signed SSL certificate in BASE64 format for database connection
+</ParamField>
+
+## Authentication & Security
+
+### Basic Authentication
+
+<ParamField path="FLOWISE_USERNAME" type="string">
+  Username for basic HTTP authentication (legacy)
+</ParamField>
+
+<ParamField path="FLOWISE_PASSWORD" type="string">
+  Password for basic HTTP authentication (legacy)
+</ParamField>
+
+### JWT Configuration
+
+<ParamField path="JWT_AUTH_TOKEN_SECRET" type="string">
+  Secret key for signing JWT access tokens. Generate with: `openssl rand -hex 32`
+  
+  If not set, uses file-based or AWS Secrets Manager storage
+</ParamField>
+
+<ParamField path="JWT_REFRESH_TOKEN_SECRET" type="string">
+  Secret key for signing JWT refresh tokens. Generate with: `openssl rand -hex 32`
+  
+  If not set, uses file-based or AWS Secrets Manager storage
+</ParamField>
+
+<ParamField path="JWT_ISSUER" type="string" default="Flowise">
+  JWT issuer claim value
+</ParamField>
+
+<ParamField path="JWT_AUDIENCE" type="string" default="Flowise">
+  JWT audience claim value
+</ParamField>
+
+<ParamField path="JWT_TOKEN_EXPIRY_IN_MINUTES" type="number" default="360">
+  Access token expiration time in minutes (default: 6 hours)
+</ParamField>
+
+<ParamField path="JWT_REFRESH_TOKEN_EXPIRY_IN_MINUTES" type="number" default="43200">
+  Refresh token expiration time in minutes (default: 30 days)
+</ParamField>
+
+<ParamField path="EXPIRE_AUTH_TOKENS_ON_RESTART" type="boolean" default="false">
+  Expire all authentication tokens when the application restarts
+</ParamField>
+
+### Session & Token Security
+
+<ParamField path="EXPRESS_SESSION_SECRET" type="string">
+  Secret for Express session signing. Generate with: `openssl rand -hex 32`
+  
+  If not set, uses file-based or AWS Secrets Manager storage
+</ParamField>
+
+<ParamField path="TOKEN_HASH_SECRET" type="string">
+  Secret for hashing tokens. Generate with: `openssl rand -hex 32`
+  
+  If not set, uses file-based or AWS Secrets Manager storage
+</ParamField>
+
+<ParamField path="SECURE_COOKIES" type="boolean">
+  Enable secure flag on cookies (recommended for HTTPS deployments)
+</ParamField>
+
+<ParamField path="INVITE_TOKEN_EXPIRY_IN_HOURS" type="number" default="24">
+  Workspace invitation token expiration time in hours
+</ParamField>
+
+<ParamField path="PASSWORD_RESET_TOKEN_EXPIRY_IN_MINS" type="number" default="15">
+  Password reset token expiration time in minutes
+</ParamField>
+
+<ParamField path="PASSWORD_SALT_HASH_ROUNDS" type="number" default="10">
+  Number of bcrypt salt rounds for password hashing
+</ParamField>
+
+## Secret Key Storage
+
+<ParamField path="SECRETKEY_STORAGE_TYPE" type="string" default="local">
+  Storage type for encryption keys and auth secrets. Options: `local`, `aws`
+</ParamField>
+
+<ParamField path="SECRETKEY_PATH" type="string" default="~/.flowise">
+  Local filesystem path for storing encryption keys and auth secrets when using `local` storage
+</ParamField>
+
+<ParamField path="FLOWISE_SECRETKEY_OVERWRITE" type="string">
+  Override the encryption key with a specific value (not recommended for production)
+</ParamField>
+
+### AWS Secrets Manager Configuration
+
+Required when `SECRETKEY_STORAGE_TYPE=aws`:
+
+<ParamField path="SECRETKEY_AWS_ACCESS_KEY" type="string">
+  AWS access key ID for Secrets Manager
+</ParamField>
+
+<ParamField path="SECRETKEY_AWS_SECRET_KEY" type="string">
+  AWS secret access key for Secrets Manager
+</ParamField>
+
+<ParamField path="SECRETKEY_AWS_REGION" type="string" default="us-west-2">
+  AWS region for Secrets Manager
+</ParamField>
+
+<ParamField path="SECRETKEY_AWS_NAME" type="string" default="FlowiseEncryptionKey">
+  Name of the secret in AWS Secrets Manager for the main encryption key
+</ParamField>
+
+<ParamField path="SECRETKEY_AWS_AUTH_PREFIX" type="string" default="Flowise">
+  Prefix for auth secret names in AWS Secrets Manager (e.g., `FlowiseTokenHashSecret`)
+</ParamField>
+
+## Email Configuration (SMTP)
+
+<ParamField path="SMTP_HOST" type="string">
+  SMTP server hostname (e.g., `smtp.gmail.com`)
+</ParamField>
+
+<ParamField path="SMTP_PORT" type="number" default="465">
+  SMTP server port
+</ParamField>
+
+<ParamField path="SMTP_USER" type="string">
+  SMTP authentication username
+</ParamField>
+
+<ParamField path="SMTP_PASSWORD" type="string">
+  SMTP authentication password
+</ParamField>
+
+<ParamField path="SMTP_SECURE" type="boolean" default="true">
+  Use TLS for SMTP connection
+</ParamField>
+
+<ParamField path="ALLOW_UNAUTHORIZED_CERTS" type="boolean" default="false">
+  Allow self-signed certificates for SMTP
+</ParamField>
+
+<ParamField path="SENDER_EMAIL" type="string">
+  From email address for sent emails (e.g., `team@example.com`)
+</ParamField>
+
+<ParamField path="WORKSPACE_INVITE_TEMPLATE_PATH" type="string">
+  Path to custom workspace invitation email template (Handlebars format)
+</ParamField>
+
+## Logging Configuration
+
+<ParamField path="DEBUG" type="boolean" default="false">
+  Enable debug mode with verbose logging
+</ParamField>
+
+<ParamField path="LOG_PATH" type="string" default="~/.flowise/logs">
+  Directory path for storing log files
+</ParamField>
+
+<ParamField path="LOG_LEVEL" type="string" default="info">
+  Logging level. Options: `error`, `warn`, `info`, `verbose`, `debug`
+</ParamField>
+
+<ParamField path="LOG_SANITIZE_BODY_FIELDS" type="string">
+  Comma-separated list of request body field names to sanitize in logs
+  
+  Default: `password,pwd,pass,secret,token,apikey,api_key,accesstoken,access_token,refreshtoken,refresh_token,clientsecret,client_secret,privatekey,private_key,secretkey,secret_key,auth,authorization,credential,credentials`
+</ParamField>
+
+<ParamField path="LOG_SANITIZE_HEADER_FIELDS" type="string" default="authorization,x-api-key,x-auth-token,cookie">
+  Comma-separated list of HTTP header names to sanitize in logs
+</ParamField>
+
+## Storage Configuration
+
+See [Storage Configuration](/configuration/storage) for detailed storage setup.
+
+<ParamField path="STORAGE_TYPE" type="string" default="local">
+  File storage type. Options: `local`, `s3`, `gcs`
+</ParamField>
+
+<ParamField path="BLOB_STORAGE_PATH" type="string" default="~/.flowise/storage">
+  Local filesystem path for file storage when using `local` storage type
+</ParamField>
+
+## Application Features
+
+<ParamField path="SHOW_COMMUNITY_NODES" type="boolean" default="true">
+  Show community-contributed nodes in the UI
+</ParamField>
+
+<ParamField path="DISABLE_FLOWISE_TELEMETRY" type="boolean" default="false">
+  Disable anonymous usage telemetry
+</ParamField>
+
+<ParamField path="DISABLED_NODES" type="string">
+  Comma-separated list of node names to disable (e.g., `bufferMemory,chatOpenAI`)
+</ParamField>
+
+<ParamField path="MODEL_LIST_CONFIG_JSON" type="string">
+  Path to custom model list configuration JSON file
+  
+  See [models.json format](https://raw.githubusercontent.com/FlowiseAI/Flowise/main/packages/components/models.json)
+</ParamField>
+
+<ParamField path="TOOL_FUNCTION_BUILTIN_DEP" type="string" default="crypto,fs">
+  Comma-separated list of built-in Node.js modules allowed in tool functions
+</ParamField>
+
+<ParamField path="TOOL_FUNCTION_EXTERNAL_DEP" type="string">
+  Comma-separated list of external npm packages allowed in tool functions (e.g., `moment,lodash`)
+</ParamField>
+
+<ParamField path="ALLOW_BUILTIN_DEP" type="boolean" default="false">
+  Allow all built-in Node.js modules in tool functions
+</ParamField>
+
+## Enterprise Features
+
+<ParamField path="LICENSE_URL" type="string">
+  URL for enterprise license server
+</ParamField>
+
+<ParamField path="FLOWISE_EE_LICENSE_KEY" type="string">
+  Enterprise edition license key
+</ParamField>
+
+<ParamField path="OFFLINE" type="boolean">
+  Run in offline mode (no external license validation)
+</ParamField>
+
+## Metrics & Monitoring
+
+<ParamField path="POSTHOG_PUBLIC_API_KEY" type="string">
+  PostHog API key for product analytics
+</ParamField>
+
+<ParamField path="ENABLE_METRICS" type="boolean" default="false">
+  Enable metrics collection
+</ParamField>
+
+<ParamField path="METRICS_PROVIDER" type="string" default="prometheus">
+  Metrics provider. Options: `prometheus`, `open_telemetry`
+</ParamField>
+
+<ParamField path="METRICS_INCLUDE_NODE_METRICS" type="boolean" default="true">
+  Include Node.js runtime metrics
+</ParamField>
+
+<ParamField path="METRICS_SERVICE_NAME" type="string" default="FlowiseAI">
+  Service name for metrics reporting
+</ParamField>
+
+### OpenTelemetry Configuration
+
+Required when `METRICS_PROVIDER=open_telemetry`:
+
+<ParamField path="METRICS_OPEN_TELEMETRY_METRIC_ENDPOINT" type="string" default="http://localhost:4318/v1/metrics">
+  OpenTelemetry metrics endpoint URL
+</ParamField>
+
+<ParamField path="METRICS_OPEN_TELEMETRY_PROTOCOL" type="string" default="http">
+  OpenTelemetry protocol. Options: `http`, `grpc`, `proto`
+</ParamField>
+
+<ParamField path="METRICS_OPEN_TELEMETRY_DEBUG" type="boolean" default="false">
+  Enable debug logging for OpenTelemetry
+</ParamField>
+
+## Proxy Configuration
+
+<ParamField path="GLOBAL_AGENT_HTTP_PROXY" type="string">
+  HTTP proxy URL for outbound requests (e.g., `http://proxy.company.com:8080`)
+</ParamField>
+
+<ParamField path="GLOBAL_AGENT_HTTPS_PROXY" type="string">
+  HTTPS proxy URL for outbound requests
+</ParamField>
+
+<ParamField path="GLOBAL_AGENT_NO_PROXY" type="string">
+  Comma-separated list of hosts to bypass proxy
+</ParamField>
+
+## Queue Configuration
+
+For distributed deployments with Redis-backed job queues:
+
+<ParamField path="MODE" type="string" default="main">
+  Application mode. Options: `queue`, `main`
+  
+  - `main`: Standard server mode
+  - `queue`: Worker mode for processing jobs from Redis queue
+</ParamField>
+
+<ParamField path="QUEUE_NAME" type="string" default="flowise-queue">
+  Redis queue name
+</ParamField>
+
+<ParamField path="QUEUE_REDIS_EVENT_STREAM_MAX_LEN" type="number" default="100000">
+  Maximum length of Redis event stream
+</ParamField>
+
+<ParamField path="WORKER_CONCURRENCY" type="number" default="100000">
+  Maximum concurrent jobs per worker
+</ParamField>
+
+<ParamField path="REMOVE_ON_AGE" type="number" default="86400">
+  Remove completed jobs after this many seconds (default: 24 hours)
+</ParamField>
+
+<ParamField path="REMOVE_ON_COUNT" type="number" default="10000">
+  Remove jobs after this count is reached
+</ParamField>
+
+### Redis Configuration
+
+<ParamField path="REDIS_URL" type="string">
+  Complete Redis connection URL (e.g., `redis://localhost:6379`)
+  
+  If set, takes precedence over individual REDIS_* settings
+</ParamField>
+
+<ParamField path="REDIS_HOST" type="string" default="localhost">
+  Redis server hostname
+</ParamField>
+
+<ParamField path="REDIS_PORT" type="number" default="6379">
+  Redis server port
+</ParamField>
+
+<ParamField path="REDIS_USERNAME" type="string">
+  Redis username (Redis 6+)
+</ParamField>
+
+<ParamField path="REDIS_PASSWORD" type="string">
+  Redis password
+</ParamField>
+
+<ParamField path="REDIS_TLS" type="boolean">
+  Enable TLS for Redis connection
+</ParamField>
+
+<ParamField path="REDIS_CERT" type="string">
+  Path to TLS certificate file
+</ParamField>
+
+<ParamField path="REDIS_KEY" type="string">
+  Path to TLS private key file
+</ParamField>
+
+<ParamField path="REDIS_CA" type="string">
+  Path to TLS CA certificate file
+</ParamField>
+
+<ParamField path="REDIS_KEEP_ALIVE" type="number">
+  TCP keep-alive interval in milliseconds
+</ParamField>
+
+<ParamField path="ENABLE_BULLMQ_DASHBOARD" type="boolean">
+  Enable BullMQ dashboard UI for queue monitoring
+</ParamField>
+
+## Security
+
+<ParamField path="HTTP_DENY_LIST" type="string">
+  Comma-separated list of URLs or patterns to block in HTTP requests
+</ParamField>
+
+<ParamField path="HTTP_SECURITY_CHECK" type="boolean" default="true">
+  Enable HTTP security checks for outbound requests
+</ParamField>
+
+<ParamField path="CUSTOM_MCP_SECURITY_CHECK" type="boolean" default="true">
+  Enable security checks for MCP (Model Context Protocol) servers
+</ParamField>
+
+<ParamField path="CUSTOM_MCP_PROTOCOL" type="string" default="sse">
+  MCP protocol type. Options: `stdio`, `sse`
+</ParamField>
+
+## Document Loaders
+
+<ParamField path="PUPPETEER_EXECUTABLE_FILE_PATH" type="string">
+  Path to Chrome/Chromium executable for Puppeteer document loader
+  
+  Example (Windows): `C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe`
+</ParamField>
+
+<ParamField path="PLAYWRIGHT_EXECUTABLE_FILE_PATH" type="string">
+  Path to Chrome/Chromium executable for Playwright document loader
+  
+  Example (Windows): `C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe`
+</ParamField>
+
+## Example Configuration
+
+```bash
+# Server
+PORT=3000
+APP_URL=https://flowise.yourdomain.com
+
+# Database (PostgreSQL)
+DATABASE_TYPE=postgres
+DATABASE_HOST=localhost
+DATABASE_PORT=5432
+DATABASE_NAME=flowise
+DATABASE_USER=flowise_user
+DATABASE_PASSWORD=secure_password
+DATABASE_SSL=true
+
+# JWT Authentication
+JWT_AUTH_TOKEN_SECRET=$(openssl rand -hex 32)
+JWT_REFRESH_TOKEN_SECRET=$(openssl rand -hex 32)
+JWT_TOKEN_EXPIRY_IN_MINUTES=360
+
+# Storage (S3)
+STORAGE_TYPE=s3
+S3_STORAGE_BUCKET_NAME=my-flowise-bucket
+S3_STORAGE_REGION=us-east-1
+
+# Email
+SMTP_HOST=smtp.gmail.com
+SMTP_PORT=465
+SMTP_USER=noreply@yourdomain.com
+SMTP_PASSWORD=app_specific_password
+SENDER_EMAIL=team@yourdomain.com
+
+# Logging
+LOG_LEVEL=info
+DEBUG=false
+```
+
+<Note>
+For production deployments, always generate secure random values for secret keys using `openssl rand -hex 32`
+</Note>
+
+<Warning>
+Never commit `.env` files containing secrets to version control. Use environment-specific configuration and secret management tools.
+</Warning>

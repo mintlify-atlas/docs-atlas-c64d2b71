@@ -1,0 +1,543 @@
+---
+title: Testing & Debugging
+description: Debug and optimize your Flowise chatflows
+---
+
+Testing and debugging are essential for building reliable chatflows. Flowise provides built-in tools to test, inspect, and troubleshoot your flows.
+
+## Testing Your Chatflow
+
+### Interactive Chat Interface
+
+The quickest way to test your chatflow is using the built-in chat interface:
+
+<Steps>
+  <Step title="Open Chat Interface">
+    Click the **chat bubble icon** in the bottom-right corner of the canvas. This opens a collapsible chat panel.
+  </Step>
+  
+  <Step title="Start a Conversation">
+    - Type a message and press Enter
+    - The message flows through your chatflow
+    - Response appears in the chat interface
+    - View streaming responses in real-time
+  </Step>
+  
+  <Step title="Test Different Scenarios">
+    Try various inputs to validate behavior:
+    
+    - Edge cases (empty input, very long input)
+    - Different question types
+    - Multi-turn conversations (if using memory)
+    - Tool invocations (if using agents)
+    - File uploads (if supported)
+  </Step>
+  
+  <Step title="Clear Chat History">
+    Click the **eraser icon** to reset the conversation and test from a fresh state.
+  </Step>
+</Steps>
+
+<Note>
+  The chat interface uses session storage. Each browser tab has an independent session, useful for testing multiple scenarios simultaneously.
+</Note>
+
+### Expanded Chat View
+
+For more detailed testing, use the expanded chat interface:
+
+<Steps>
+  <Step title="Expand Chat">
+    Click the **expand icon** (arrows) in the chat panel to open a full-screen dialog.
+  </Step>
+  
+  <Step title="Advanced Features">
+    The expanded view provides:
+    
+    - Larger conversation area
+    - Message timestamps
+    - Better visibility for long responses
+    - File upload interface (drag-and-drop)
+    - Voice input (if enabled)
+    - Response time indicators
+  </Step>
+  
+  <Step title="Monitor Performance">
+    Watch for:
+    - Response latency
+    - Streaming behavior
+    - Error messages
+    - Tool execution logs (in agent flows)
+  </Step>
+</Steps>
+
+## Viewing Messages
+
+Access the complete message history for analysis:
+
+<Steps>
+  <Step title="Open Settings Menu">
+    Click the **settings icon** (gear) in the chatflow header.
+  </Step>
+  
+  <Step title="View Messages">
+    Select **View Messages** from the dropdown. This opens a dialog showing:
+    
+    - All conversations for this chatflow
+    - Message timestamps
+    - User and AI messages
+    - Session IDs
+    - Feedback ratings (if enabled)
+  </Step>
+  
+  <Step title="Filter and Search">
+    - Filter by date range
+    - Search message content
+    - Filter by session ID
+    - Export to CSV for analysis
+  </Step>
+</Steps>
+
+<Accordion title="Message Metadata">
+  Each message includes valuable debugging data:
+  
+  ```json
+  {
+    "chatId": "unique-session-id",
+    "role": "user", // or "assistant"
+    "content": "What is the weather?",
+    "createdDate": "2026-03-03T10:30:00Z",
+    "chatflowId": "flow-id",
+    "metadata": {
+      "sessionId": "user-session-123",
+      "chatType": "INTERNAL",
+      "sourceDocuments": [...], // For RAG flows
+      "agentReasoning": [...] // For agent flows
+    }
+  }
+  ```
+</Accordion>
+
+## Debugging Techniques
+
+### Visual Flow Inspection
+
+Use the canvas to understand data flow:
+
+<Tabs>
+  <Tab title="Connection Validation">
+    Ensure connections are valid:
+    
+    1. **Green connections**: Valid, type-compatible
+    2. **Red/invalid**: Type mismatch or missing required input
+    3. **Orphaned nodes**: Not connected to the flow (won't execute)
+    4. **Missing inputs**: Nodes with unfilled required parameters
+    
+    <Warning>
+      Orphaned nodes don't cause errors but won't execute. Ensure all nodes are part of the execution path.
+    </Warning>
+  </Tab>
+  
+  <Tab title="Node Validation">
+    Check for node issues:
+    
+    - **Orange warning icon**: Node is outdated (update available)
+    - **Red error state**: Missing required parameters or credentials
+    - **Deprecation badge**: Node will be removed in future version
+    - **Custom warnings**: Specific issues (e.g., "API key not set")
+    
+    Hover over warning icons to see details.
+  </Tab>
+  
+  <Tab title="Flow Validation">
+    Use the validation API to check the entire flow:
+    
+    ```javascript
+    // Using the Agentflow component
+    const result = agentflowRef.current.validate()
+    
+    if (!result.valid) {
+      console.log('Errors:', result.errors)
+      // Example errors:
+      // - "Node 'chatOpenAI_0' missing required credential"
+      // - "No output node found"
+      // - "Circular dependency detected"
+    }
+    ```
+  </Tab>
+</Tabs>
+
+### Testing Agent Flows
+
+Agent flows require special attention:
+
+<Steps>
+  <Step title="Enable Agent Reasoning">
+    In the chatflow configuration, enable **Show Agent Reasoning** to see:
+    
+    - Which tools the agent considers
+    - Tool selection reasoning
+    - Tool execution results
+    - Intermediate steps
+    - Final answer synthesis
+  </Step>
+  
+  <Step title="Review Tool Descriptions">
+    Poor tool descriptions are the #1 cause of agent failures:
+    
+    ❌ **Bad**: "Calculator"
+    
+    ✅ **Good**: "Useful for performing mathematical calculations. Input should be a valid mathematical expression like '2 + 2' or '10 * 5'."
+    
+    <Note>
+      The LLM uses tool descriptions to decide when and how to call tools. Be explicit about input formats and use cases.
+    </Note>
+  </Step>
+  
+  <Step title="Test Tool Execution">
+    Test tools individually:
+    
+    1. Ask questions that should trigger specific tools
+    2. Verify tool is called with correct parameters
+    3. Check tool returns expected results
+    4. Confirm agent uses results appropriately
+  </Step>
+  
+  <Step title="Debug Agent Loops">
+    If agent gets stuck in loops:
+    
+    - Set `Max Iterations` parameter (default: 10)
+    - Review system message for conflicting instructions
+    - Check if tools return valid, parseable output
+    - Ensure tool descriptions don't overlap (agent confusion)
+  </Step>
+</Steps>
+
+### Testing RAG Flows
+
+Retrieval Augmented Generation requires validating both retrieval and generation:
+
+<Steps>
+  <Step title="Verify Document Upload">
+    1. Use the **Upsert** button to upload documents
+    2. Check upsert history in settings menu
+    3. Verify document count in vector store
+    4. Review chunk sizes and overlap settings
+  </Step>
+  
+  <Step title="Test Retrieval Quality">
+    Ask questions and check retrieved documents:
+    
+    - Enable **Return Source Documents** in chain config
+    - Review source documents in chat response
+    - Verify relevance (right documents retrieved?)
+    - Check similarity scores (above 0.7 is good)
+  </Step>
+  
+  <Step title="Tune Retrieval Parameters">
+    Adjust if retrieval is poor:
+    
+    - `Top K`: Number of documents to retrieve (default: 4)
+    - `Similarity Threshold`: Minimum similarity score (0.0-1.0)
+    - `Chunk Size`: Text splitter chunk size (500-1000)
+    - `Chunk Overlap`: Overlap between chunks (50-200)
+  </Step>
+  
+  <Step title="Debug Upsert Issues">
+    If documents aren't being found:
+    
+    - Check vector store credentials
+    - Verify embedding model is same for upsert and retrieval
+    - Review upsert history for errors
+    - Test with simple, direct questions first
+  </Step>
+</Steps>
+
+## Common Issues and Solutions
+
+<Accordion title="No Response / Timeout">
+  **Symptoms**: Chat doesn't respond, or times out after 120 seconds
+  
+  **Causes**:
+  - API key invalid or quota exceeded
+  - Node misconfiguration (missing required params)
+  - Network issues or API downtime
+  - Infinite loop in agent
+  
+  **Solutions**:
+  1. Check browser console for errors (F12)
+  2. Verify API credentials are valid
+  3. Test with simpler model (e.g., gpt-3.5-turbo)
+  4. Reduce `Max Iterations` on agents
+  5. Check API status pages (status.openai.com, etc.)
+</Accordion>
+
+<Accordion title="Wrong or Irrelevant Answers">
+  **Symptoms**: LLM provides incorrect or off-topic responses
+  
+  **Causes**:
+  - Poor prompt engineering
+  - Temperature too high (hallucinations)
+  - Wrong documents retrieved (RAG)
+  - Tool malfunction (agents)
+  
+  **Solutions**:
+  1. Review and improve system message/prompt
+  2. Lower temperature (0.1-0.3 for factual tasks)
+  3. Add few-shot examples in prompts
+  4. Check retrieved documents (RAG flows)
+  5. Verify tool descriptions (agent flows)
+  6. Use more capable model (gpt-4 vs gpt-3.5)
+</Accordion>
+
+<Accordion title="Memory Not Working">
+  **Symptoms**: Bot doesn't remember previous messages
+  
+  **Causes**:
+  - Memory not connected to chain/agent
+  - Different session IDs
+  - Chat history cleared
+  - Memory key mismatch
+  
+  **Solutions**:
+  1. Verify memory node is connected
+  2. Check session ID consistency (should be same per user)
+  3. Use `Session ID` parameter or default to auto-generated
+  4. Ensure `Memory Key` matches chain's expectation (`chat_history`)
+  5. Check memory type (Buffer vs Window vs Summary)
+</Accordion>
+
+<Accordion title="Tool Not Being Called">
+  **Symptoms**: Agent ignores tools or uses wrong tool
+  
+  **Causes**:
+  - Vague tool description
+  - Model doesn't support function calling
+  - System message conflicts with tool use
+  - Tool not connected properly
+  
+  **Solutions**:
+  1. Improve tool descriptions (be very explicit)
+  2. Use Tool Agent instead of Conversational Agent (uses function calling)
+  3. Remove conflicting instructions from system message
+  4. Verify tool connections (check edge exists)
+  5. Test with simpler prompts that clearly need the tool
+</Accordion>
+
+<Accordion title="Rate Limiting / 429 Errors">
+  **Symptoms**: "Rate limit exceeded" errors
+  
+  **Causes**:
+  - Too many requests to API
+  - API tier limits hit
+  - Concurrent requests exceed quota
+  
+  **Solutions**:
+  1. Add rate limiting in chatflow configuration
+  2. Upgrade API tier/plan
+  3. Implement request queuing
+  4. Use caching to reduce redundant calls
+  5. Increase timeout between retries
+</Accordion>
+
+## Browser Developer Tools
+
+Use browser DevTools for deeper debugging:
+
+<Tabs>
+  <Tab title="Console">
+    Open browser console (F12) to see:
+    
+    - JavaScript errors
+    - Network request failures
+    - API response details
+    - Validation errors
+    
+    ```javascript
+    // Common console messages:
+    
+    // API call details
+    "POST /api/v1/prediction/flow-id"
+    
+    // Validation errors
+    "Node validation failed: Missing credential"
+    
+    // Agent reasoning (if enabled)
+    "Agent selected tool: calculator"
+    "Tool result: 42"
+    ```
+  </Tab>
+  
+  <Tab title="Network Tab">
+    Monitor API requests:
+    
+    1. Open DevTools → Network tab
+    2. Send a chat message
+    3. Look for requests to `/api/v1/prediction/`
+    4. Click request to see:
+       - Request payload (your input)
+       - Response (LLM output)
+       - Headers (auth, content-type)
+       - Timing (latency)
+    
+    **Red requests** indicate errors - click to see error details.
+  </Tab>
+  
+  <Tab title="Application Storage">
+    Check stored data:
+    
+    1. DevTools → Application → Local Storage
+    2. Look for keys like `{chatflowId}_INTERNAL`
+    3. Contains chat history and session data
+    4. Clear to reset state
+    
+    ```json
+    {
+      "chatId": "session-123",
+      "messages": [...],
+      "timestamp": 1709467800000
+    }
+    ```
+  </Tab>
+</Tabs>
+
+## API Testing
+
+Test your chatflow via API for production-like scenarios:
+
+<Steps>
+  <Step title="Get API Endpoint">
+    Click the **API Code** button in the chatflow header to see:
+    
+    - Prediction endpoint URL
+    - Example request code (cURL, Python, JavaScript)
+    - API key requirements
+  </Step>
+  
+  <Step title="Test with cURL">
+    ```bash
+    curl -X POST https://your-flowise.com/api/v1/prediction/{flowId} \
+      -H "Content-Type: application/json" \
+      -d '{
+        "question": "What is the weather?",
+        "overrideConfig": {
+          "sessionId": "test-session-123"
+        }
+      }'
+    ```
+  </Step>
+  
+  <Step title="Test Advanced Features">
+    Use `overrideConfig` to test:
+    
+    ```json
+    {
+      "question": "Test question",
+      "overrideConfig": {
+        "sessionId": "user-123",
+        "vars": {
+          "customVar": "value"
+        },
+        "temperature": 0.5,
+        "returnSourceDocuments": true
+      }
+    }
+    ```
+  </Step>
+</Steps>
+
+## Performance Monitoring
+
+### Response Time Analysis
+
+Track and optimize response times:
+
+<Accordion title="Identifying Bottlenecks">
+  Common slow components:
+  
+  1. **LLM API calls**: 2-10 seconds (largest factor)
+  2. **Vector search**: 100-500ms
+  3. **Tool execution**: Varies by tool (API calls can be slow)
+  4. **Document processing**: Depends on size
+  
+  **Optimization strategies**:
+  - Use streaming for perceived performance
+  - Cache frequent queries
+  - Use faster models (gpt-3.5-turbo vs gpt-4)
+  - Reduce token limits
+  - Optimize vector store (better indexing)
+</Accordion>
+
+### Token Usage Tracking
+
+Monitor and control costs:
+
+<Steps>
+  <Step title="Check Message Logs">
+    View token usage in message history:
+    - Prompt tokens (input)
+    - Completion tokens (output)
+    - Total tokens per request
+  </Step>
+  
+  <Step title="Optimize Token Usage">
+    - Set `Max Tokens` to reasonable limits
+    - Use shorter system messages
+    - Reduce `Top K` in RAG (fewer retrieved docs)
+    - Use smaller context windows
+    - Clear memory periodically (in long conversations)
+  </Step>
+  
+  <Step title="Cost Estimation">
+    Calculate approximate costs:
+    
+    ```
+    GPT-4: ~$0.03 per 1K prompt tokens, $0.06 per 1K completion tokens
+    GPT-3.5: ~$0.0015 per 1K prompt tokens, $0.002 per 1K completion tokens
+    
+    Example: 500 prompt + 200 completion tokens with GPT-4
+    Cost = (500 * 0.03 / 1000) + (200 * 0.06 / 1000) = $0.027
+    ```
+  </Step>
+</Steps>
+
+## Best Practices
+
+<Accordion title="Testing Workflow">
+  1. **Start simple**: Test basic functionality first
+  2. **Add complexity gradually**: Add one node/feature at a time
+  3. **Test each addition**: Verify before adding more
+  4. **Use version control**: Export flows regularly as backups
+  5. **Test edge cases**: Empty input, very long input, special characters
+  6. **Load test**: Use API testing for production scenarios
+  7. **Monitor in production**: Track errors and performance
+</Accordion>
+
+<Accordion title="Debugging Workflow">
+  1. **Reproduce the issue**: Find consistent steps to trigger
+  2. **Isolate the problem**: Remove nodes until issue disappears
+  3. **Check basics first**: Credentials, connections, required params
+  4. **Read error messages**: Browser console and API responses
+  5. **Test incrementally**: Fix one issue at a time
+  6. **Document fixes**: Add sticky notes explaining solutions
+</Accordion>
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Variables & Expressions" icon="code" href="/building/variables-expressions">
+    Use dynamic values for advanced flows
+  </Card>
+  
+  <Card title="API Reference" icon="book" href="/api-reference/overview">
+    Integrate chatflows into your application
+  </Card>
+  
+  <Card title="Deployment" icon="rocket" href="/deployment/overview">
+    Deploy and monitor in production
+  </Card>
+  
+  <Card title="Best Practices" icon="star" href="/guides/best-practices">
+    Optimization and production tips
+  </Card>
+</CardGroup>

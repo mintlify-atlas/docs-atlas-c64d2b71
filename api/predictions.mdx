@@ -1,0 +1,381 @@
+---
+title: 'Predictions'
+description: 'Execute chatflows and get AI-powered predictions'
+icon: 'wand-magic-sparkles'
+---
+
+## Overview
+
+The Predictions API allows you to execute chatflows and receive AI-generated responses. This is the primary endpoint for integrating Flowise chatflows into your applications.
+
+<Note>
+Prediction endpoints require API key authentication when the chatflow has an `apikeyid` configured. Public chatflows can be accessed without authentication.
+</Note>
+
+## Create Prediction
+
+Send a message to a chatflow and receive a prediction.
+
+```bash POST /api/v1/prediction/:id
+curl -X POST http://localhost:3000/api/v1/prediction/CHATFLOW_ID \
+  -H "Authorization: Bearer YOUR_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "question": "What is the capital of France?"
+  }'
+```
+
+### Path Parameters
+
+<ParamField path="id" type="string" required>
+  The unique identifier of the chatflow to execute
+</ParamField>
+
+### Request Body
+
+<ParamField body="question" type="string" required>
+  The input message or question to send to the chatflow
+</ParamField>
+
+<ParamField body="chatId" type="string">
+  Session ID to maintain conversation context. If not provided, a new session will be created.
+</ParamField>
+
+<ParamField body="streaming" type="boolean" default="false">
+  Enable Server-Sent Events (SSE) streaming for real-time responses
+</ParamField>
+
+<ParamField body="history" type="array">
+  Array of previous messages to provide conversation context
+  
+  ```json
+  [
+    {
+      "role": "user",
+      "content": "Hello"
+    },
+    {
+      "role": "assistant",
+      "content": "Hi! How can I help you?"
+    }
+  ]
+  ```
+</ParamField>
+
+<ParamField body="overrideConfig" type="object">
+  Override chatflow configuration for this request
+  
+  ```json
+  {
+    "sessionId": "custom-session-id",
+    "temperature": 0.7,
+    "maxTokens": 500
+  }
+  ```
+</ParamField>
+
+<ParamField body="uploads" type="array">
+  Array of file uploads (when chatflow supports file inputs)
+</ParamField>
+
+### Response (Non-Streaming)
+
+```json
+{
+  "chatId": "session-uuid",
+  "question": "What is the capital of France?",
+  "text": "The capital of France is Paris.",
+  "sourceDocuments": [],
+  "usedTools": [],
+  "followUpPrompts": [],
+  "metadata": {
+    "model": "gpt-4",
+    "temperature": 0.7
+  }
+}
+```
+
+<ResponseField name="chatId" type="string">
+  The session ID for this conversation
+</ResponseField>
+
+<ResponseField name="question" type="string">
+  The input question that was sent
+</ResponseField>
+
+<ResponseField name="text" type="string">
+  The AI-generated response
+</ResponseField>
+
+<ResponseField name="sourceDocuments" type="array">
+  Documents retrieved from vector stores (if applicable)
+</ResponseField>
+
+<ResponseField name="usedTools" type="array">
+  Tools that were invoked during execution
+</ResponseField>
+
+<ResponseField name="followUpPrompts" type="array">
+  Suggested follow-up questions
+</ResponseField>
+
+## Streaming Responses
+
+Enable real-time streaming to receive responses as they're generated.
+
+```bash POST /api/v1/prediction/:id (Streaming)
+curl -X POST http://localhost:3000/api/v1/prediction/CHATFLOW_ID \
+  -H "Authorization: Bearer YOUR_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "question": "Tell me a story",
+    "streaming": true
+  }'
+```
+
+### Streaming Response Format
+
+When streaming is enabled, the response uses Server-Sent Events (SSE):
+
+```
+event: token
+data: {"token": "The"}
+
+event: token
+data: {"token": " capital"}
+
+event: token  
+data: {"token": " of"}
+
+event: metadata
+data: {"chatId": "session-uuid", "question": "..."}
+
+event: end
+data: {}
+```
+
+<Info>
+The chatflow must have streaming enabled in its configuration for this to work. Check the `isStreaming` property of your chatflow.
+</Info>
+
+## File Uploads
+
+Some chatflows support file uploads. Use multipart/form-data to send files:
+
+```bash POST /api/v1/prediction/:id (with files)
+curl -X POST http://localhost:3000/api/v1/prediction/CHATFLOW_ID \
+  -H "Authorization: Bearer YOUR_API_KEY" \
+  -F "question=Analyze this document" \
+  -F "files=@/path/to/document.pdf"
+```
+
+### File Upload Parameters
+
+<ParamField body="files" type="file[]">
+  Array of files to upload (sent as multipart form data)
+</ParamField>
+
+## Domain Restrictions
+
+Chatflows can be configured with allowed origins to restrict which domains can make prediction requests. If your request is rejected:
+
+```json
+{
+  "message": "This site is not allowed to access this chatbot"
+}
+```
+
+Contact the chatflow owner to add your domain to the allowed origins list.
+
+## Rate Limiting
+
+Prediction requests may be rate-limited based on the chatflow configuration. If you exceed the rate limit:
+
+```json
+{
+  "message": "Too many requests"
+}
+```
+
+<Tip>
+Implement exponential backoff when receiving rate limit errors.
+</Tip>
+
+## Session Management
+
+Maintain conversation context by using the same `chatId` across multiple requests:
+
+<CodeGroup>
+
+```javascript JavaScript
+// First message - creates new session
+const firstResponse = await fetch(
+  'http://localhost:3000/api/v1/prediction/CHATFLOW_ID',
+  {
+    method: 'POST',
+    headers: {
+      'Authorization': 'Bearer YOUR_API_KEY',
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({
+      question: 'Hello, my name is Alice'
+    })
+  }
+).then(res => res.json());
+
+const chatId = firstResponse.chatId;
+
+// Follow-up message - uses same session
+const secondResponse = await fetch(
+  'http://localhost:3000/api/v1/prediction/CHATFLOW_ID',
+  {
+    method: 'POST',
+    headers: {
+      'Authorization': 'Bearer YOUR_API_KEY',
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({
+      question: 'What is my name?',
+      chatId: chatId
+    })
+  }
+).then(res => res.json());
+
+console.log(secondResponse.text); // Should mention "Alice"
+```
+
+```python Python
+import requests
+
+# First message - creates new session
+first_response = requests.post(
+    'http://localhost:3000/api/v1/prediction/CHATFLOW_ID',
+    headers={
+        'Authorization': 'Bearer YOUR_API_KEY',
+        'Content-Type': 'application/json'
+    },
+    json={'question': 'Hello, my name is Alice'}
+).json()
+
+chat_id = first_response['chatId']
+
+# Follow-up message - uses same session
+second_response = requests.post(
+    'http://localhost:3000/api/v1/prediction/CHATFLOW_ID',
+    headers={
+        'Authorization': 'Bearer YOUR_API_KEY',
+        'Content-Type': 'application/json'
+    },
+    json={
+        'question': 'What is my name?',
+        'chatId': chat_id
+    }
+).json()
+
+print(second_response['text'])  # Should mention "Alice"
+```
+
+</CodeGroup>
+
+## Advanced Configuration
+
+### Override Config
+
+Temporarily override chatflow settings for a specific request:
+
+```javascript
+const response = await fetch(
+  'http://localhost:3000/api/v1/prediction/CHATFLOW_ID',
+  {
+    method: 'POST',
+    headers: {
+      'Authorization': 'Bearer YOUR_API_KEY',
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({
+      question: 'Be creative!',
+      overrideConfig: {
+        temperature: 1.2,
+        maxTokens: 1000,
+        systemMessage: 'You are a creative storyteller'
+      }
+    })
+  }
+).then(res => res.json());
+```
+
+### Conversation History
+
+Provide explicit conversation history instead of relying on session storage:
+
+```javascript
+const response = await fetch(
+  'http://localhost:3000/api/v1/prediction/CHATFLOW_ID',
+  {
+    method: 'POST',
+    headers: {
+      'Authorization': 'Bearer YOUR_API_KEY',
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({
+      question: 'What did I ask about?',
+      history: [
+        { role: 'user', content: 'Tell me about Paris' },
+        { role: 'assistant', content: 'Paris is the capital of France...' }
+      ]
+    })
+  }
+).then(res => res.json());
+```
+
+## Error Handling
+
+<AccordionGroup>
+  <Accordion title="401 Unauthorized">
+    The API key is missing, invalid, or doesn't have permission to access this chatflow.
+    
+    **Solution:** Verify your API key and ensure the chatflow's `apikeyid` matches your key.
+  </Accordion>
+  
+  <Accordion title="403 Forbidden">
+    Your domain is not in the chatflow's allowed origins list.
+    
+    **Solution:** Add your domain to the chatflow's `allowedOrigins` configuration.
+  </Accordion>
+  
+  <Accordion title="404 Not Found">
+    The chatflow ID doesn't exist.
+    
+    **Solution:** Verify the chatflow ID is correct and the chatflow exists.
+  </Accordion>
+  
+  <Accordion title="412 Precondition Failed">
+    Required parameters are missing from the request.
+    
+    **Solution:** Ensure all required fields (like `question`) are included.
+  </Accordion>
+</AccordionGroup>
+
+## Webhook Integration
+
+Combine predictions with webhooks to trigger actions based on responses:
+
+```javascript
+const response = await fetch(
+  'http://localhost:3000/api/v1/prediction/CHATFLOW_ID',
+  {
+    method: 'POST',
+    headers: {
+      'Authorization': 'Bearer YOUR_API_KEY',
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({
+      question: 'Process this order',
+      overrideConfig: {
+        webhookUrl: 'https://your-domain.com/webhook',
+        webhookMethod: 'POST'
+      }
+    })
+  }
+).then(res => res.json());
+```

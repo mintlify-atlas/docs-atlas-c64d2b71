@@ -1,0 +1,538 @@
+---
+title: Cloud Provider Deployments
+description: Deploy Flowise to AWS, Azure, GCP, and other cloud platforms
+---
+
+Flowise can be deployed to any cloud platform that supports Node.js applications or Docker containers. This guide covers deployment to major cloud providers and platform-as-a-service offerings.
+
+## Major Cloud Providers
+
+<CardGroup cols={3}>
+  <Card title="AWS" icon="aws" href="https://docs.flowiseai.com/configuration/deployment/aws">
+    Deploy on Amazon Web Services
+  </Card>
+  <Card title="Azure" icon="microsoft" href="https://docs.flowiseai.com/configuration/deployment/azure">
+    Deploy on Microsoft Azure
+  </Card>
+  <Card title="GCP" icon="google" href="https://docs.flowiseai.com/configuration/deployment/gcp">
+    Deploy on Google Cloud Platform
+  </Card>
+  <Card title="Digital Ocean" icon="water" href="https://docs.flowiseai.com/configuration/deployment/digital-ocean">
+    Deploy on Digital Ocean
+  </Card>
+  <Card title="Alibaba Cloud" icon="cloud" href="https://computenest.console.aliyun.com/service/instance/create/default?type=user&ServiceName=Flowise社区版">
+    Deploy on Alibaba Cloud
+  </Card>
+</CardGroup>
+
+## AWS Deployment
+
+### AWS ECS (Fargate)
+
+Deploy Flowise as a containerized service:
+
+<Steps>
+  <Step title="Create ECR repository">
+    ```bash
+    aws ecr create-repository --repository-name flowise
+    ```
+  </Step>
+  
+  <Step title="Build and push Docker image">
+    ```bash
+    # Authenticate Docker to ECR
+    aws ecr get-login-password --region us-east-1 | \
+      docker login --username AWS --password-stdin <account-id>.dkr.ecr.us-east-1.amazonaws.com
+    
+    # Build and tag
+    docker build -t flowise .
+    docker tag flowise:latest <account-id>.dkr.ecr.us-east-1.amazonaws.com/flowise:latest
+    
+    # Push to ECR
+    docker push <account-id>.dkr.ecr.us-east-1.amazonaws.com/flowise:latest
+    ```
+  </Step>
+  
+  <Step title="Create ECS task definition">
+    Configure your task with:
+    - Container image from ECR
+    - Port mapping: 3000
+    - Environment variables from Secrets Manager
+    - CloudWatch logs integration
+  </Step>
+  
+  <Step title="Set up RDS for database">
+    ```bash
+    # Create PostgreSQL instance
+    aws rds create-db-instance \
+      --db-instance-identifier flowise-db \
+      --db-instance-class db.t3.micro \
+      --engine postgres \
+      --master-username flowise \
+      --master-user-password <secure-password> \
+      --allocated-storage 20
+    ```
+  </Step>
+  
+  <Step title="Configure S3 for storage">
+    ```bash
+    # Create S3 bucket
+    aws s3 mb s3://flowise-storage-bucket
+    
+    # Set environment variables
+    STORAGE_TYPE=s3
+    S3_STORAGE_BUCKET_NAME=flowise-storage-bucket
+    S3_STORAGE_REGION=us-east-1
+    ```
+  </Step>
+</Steps>
+
+### AWS Secrets Manager
+
+Store sensitive credentials securely:
+
+```bash
+# Create secret
+aws secretsmanager create-secret \
+  --name flowise/secrets \
+  --secret-string '{
+    "JWT_AUTH_TOKEN_SECRET":"your-secret",
+    "DATABASE_PASSWORD":"db-password"
+  }'
+
+# Configure task to read from Secrets Manager
+SECRETKEY_STORAGE_TYPE=aws
+SECRETKEY_AWS_REGION=us-east-1
+SECRETKEY_AWS_NAME=FlowiseEncryptionKey
+```
+
+### AWS Application Load Balancer
+
+Set up HTTPS termination:
+
+1. Create ALB targeting your ECS service
+2. Configure HTTPS listener with ACM certificate
+3. Set health check path: `/api/v1/ping`
+4. Enable sticky sessions for WebSocket support
+
+## Azure Deployment
+
+### Azure Container Instances
+
+Quick deployment with ACI:
+
+```bash
+az container create \
+  --resource-group flowise-rg \
+  --name flowise \
+  --image flowiseai/flowise:latest \
+  --dns-name-label flowise-app \
+  --ports 3000 \
+  --environment-variables \
+    PORT=3000 \
+    DATABASE_TYPE=postgres \
+  --secure-environment-variables \
+    DATABASE_PASSWORD=<secure-password>
+```
+
+### Azure App Service
+
+Deploy as a web app:
+
+<Steps>
+  <Step title="Create App Service Plan">
+    ```bash
+    az appservice plan create \
+      --name flowise-plan \
+      --resource-group flowise-rg \
+      --is-linux \
+      --sku B1
+    ```
+  </Step>
+  
+  <Step title="Create Web App">
+    ```bash
+    az webapp create \
+      --resource-group flowise-rg \
+      --plan flowise-plan \
+      --name flowise-app \
+      --deployment-container-image-name flowiseai/flowise:latest
+    ```
+  </Step>
+  
+  <Step title="Configure environment variables">
+    ```bash
+    az webapp config appsettings set \
+      --resource-group flowise-rg \
+      --name flowise-app \
+      --settings \
+        PORT=3000 \
+        DATABASE_TYPE=postgres \
+        STORAGE_TYPE=s3
+    ```
+  </Step>
+</Steps>
+
+### Azure Database for PostgreSQL
+
+```bash
+az postgres server create \
+  --resource-group flowise-rg \
+  --name flowise-db \
+  --location eastus \
+  --admin-user flowiseadmin \
+  --admin-password <secure-password> \
+  --sku-name B_Gen5_1
+
+# Configure firewall
+az postgres server firewall-rule create \
+  --resource-group flowise-rg \
+  --server flowise-db \
+  --name AllowAzureServices \
+  --start-ip-address 0.0.0.0 \
+  --end-ip-address 0.0.0.0
+```
+
+## Google Cloud Platform
+
+### Cloud Run
+
+Serverless container deployment:
+
+<Steps>
+  <Step title="Build and push to Container Registry">
+    ```bash
+    # Configure Docker for GCP
+    gcloud auth configure-docker
+    
+    # Build and push
+    docker build -t gcr.io/PROJECT_ID/flowise .
+    docker push gcr.io/PROJECT_ID/flowise
+    ```
+  </Step>
+  
+  <Step title="Deploy to Cloud Run">
+    ```bash
+    gcloud run deploy flowise \
+      --image gcr.io/PROJECT_ID/flowise \
+      --platform managed \
+      --region us-central1 \
+      --allow-unauthenticated \
+      --port 3000 \
+      --memory 2Gi \
+      --set-env-vars PORT=3000,DATABASE_TYPE=postgres
+    ```
+  </Step>
+  
+  <Step title="Set up Cloud SQL">
+    ```bash
+    # Create PostgreSQL instance
+    gcloud sql instances create flowise-db \
+      --database-version=POSTGRES_14 \
+      --tier=db-f1-micro \
+      --region=us-central1
+    
+    # Create database
+    gcloud sql databases create flowise \
+      --instance=flowise-db
+    
+    # Connect Cloud Run to Cloud SQL
+    gcloud run services update flowise \
+      --add-cloudsql-instances PROJECT_ID:us-central1:flowise-db
+    ```
+  </Step>
+</Steps>
+
+### GKE (Kubernetes)
+
+Deploy to Google Kubernetes Engine:
+
+```yaml kubernetes/deployment.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: flowise
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: flowise
+  template:
+    metadata:
+      labels:
+        app: flowise
+    spec:
+      containers:
+      - name: flowise
+        image: gcr.io/PROJECT_ID/flowise:latest
+        ports:
+        - containerPort: 3000
+        env:
+        - name: PORT
+          value: "3000"
+        - name: DATABASE_TYPE
+          value: "postgres"
+        - name: DATABASE_HOST
+          valueFrom:
+            secretKeyRef:
+              name: flowise-secrets
+              key: db-host
+        resources:
+          requests:
+            memory: "2Gi"
+            cpu: "1000m"
+          limits:
+            memory: "4Gi"
+            cpu: "2000m"
+```
+
+## Platform-as-a-Service Options
+
+### Railway
+
+One-click deployment to Railway:
+
+<Card title="Deploy on Railway" icon="train" href="https://railway.app/template/pn4G8S?referralCode=WVNPD9">
+  [![Deploy on Railway](https://railway.app/button.svg)](https://railway.app/template/pn4G8S?referralCode=WVNPD9)
+</Card>
+
+Railway automatically:
+- Provisions PostgreSQL database
+- Sets up environment variables
+- Provides HTTPS endpoint
+- Handles deployments from GitHub
+
+### Render
+
+Deploy to Render:
+
+<Card title="Deploy to Render" icon="server" href="https://docs.flowiseai.com/configuration/deployment/render">
+  [![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://docs.flowiseai.com/configuration/deployment/render)
+</Card>
+
+<Steps>
+  <Step title="Create Web Service">
+    - Select Docker runtime
+    - Connect to GitHub repository
+    - Set Docker image: `flowiseai/flowise:latest`
+  </Step>
+  
+  <Step title="Add PostgreSQL">
+    Create a PostgreSQL database in Render and connect it
+  </Step>
+  
+  <Step title="Configure environment">
+    Set required environment variables in Render dashboard
+  </Step>
+</Steps>
+
+### Northflank
+
+<Card title="Deploy to Northflank" icon="ship" href="https://northflank.com/stacks/deploy-flowiseai">
+  [![Deploy to Northflank](https://assets.northflank.com/deploy_to_northflank_smm_36700fb050.svg)](https://northflank.com/stacks/deploy-flowiseai)
+</Card>
+
+Northflank provides:
+- Managed PostgreSQL
+- Auto-scaling
+- Built-in monitoring
+- CI/CD integration
+
+### Digital Ocean App Platform
+
+<Steps>
+  <Step title="Create App">
+    - Choose Docker Hub as source
+    - Image: `flowiseai/flowise:latest`
+  </Step>
+  
+  <Step title="Add Database">
+    Create a managed PostgreSQL database
+  </Step>
+  
+  <Step title="Configure">
+    Set environment variables:
+    ```bash
+    DATABASE_TYPE=postgres
+    DATABASE_HOST=${db.HOSTNAME}
+    DATABASE_PORT=${db.PORT}
+    DATABASE_NAME=${db.DATABASE}
+    DATABASE_USER=${db.USERNAME}
+    DATABASE_PASSWORD=${db.PASSWORD}
+    ```
+  </Step>
+</Steps>
+
+## Other Deployment Options
+
+### HuggingFace Spaces
+
+<Card title="Deploy on HuggingFace" icon="face-smile" href="https://huggingface.co/spaces/FlowiseAI/Flowise">
+  <a href="https://huggingface.co/spaces/FlowiseAI/Flowise">
+    <img src="https://huggingface.co/datasets/huggingface/badges/raw/main/open-in-hf-spaces-sm.svg" alt="Open in HF Spaces"/>
+  </a>
+</Card>
+
+Perfect for demos and experimentation.
+
+### Sealos
+
+<Card title="Deploy on Sealos" icon="anchor" href="https://template.sealos.io/deploy?templateName=flowise">
+  [![Deploy on Sealos](https://sealos.io/Deploy-on-Sealos.svg)](https://template.sealos.io/deploy?templateName=flowise)
+</Card>
+
+Kubernetes-based cloud platform with one-click deployment.
+
+### Elestio
+
+<Card title="Deploy on Elestio" icon="rocket" href="https://elest.io/open-source/flowiseai">
+  [![Deploy on Elestio](https://elest.io/images/logos/deploy-to-elestio-btn.png)](https://elest.io/open-source/flowiseai)
+</Card>
+
+Fully managed deployment with automatic backups.
+
+### RepoCloud
+
+<Card title="Deploy on RepoCloud" icon="cloud" href="https://repocloud.io/details/?app_id=29">
+  [![Deploy on RepoCloud](https://d16t0pc4846x52.cloudfront.net/deploy.png)](https://repocloud.io/details/?app_id=29)
+</Card>
+
+## Production Considerations
+
+### Database Recommendations
+
+<Warning>
+Do not use SQLite for production deployments on cloud platforms. Use managed database services.
+</Warning>
+
+Recommended database services:
+- **AWS**: RDS PostgreSQL or Aurora
+- **Azure**: Azure Database for PostgreSQL
+- **GCP**: Cloud SQL for PostgreSQL
+- **Digital Ocean**: Managed PostgreSQL
+
+### Storage Configuration
+
+Use cloud-native storage:
+
+<CodeGroup>
+```bash AWS S3
+STORAGE_TYPE=s3
+S3_STORAGE_BUCKET_NAME=flowise-storage
+S3_STORAGE_ACCESS_KEY_ID=<access-key>
+S3_STORAGE_SECRET_ACCESS_KEY=<secret-key>
+S3_STORAGE_REGION=us-east-1
+```
+
+```bash Google Cloud Storage
+STORAGE_TYPE=gcs
+GOOGLE_CLOUD_STORAGE_PROJ_ID=<project-id>
+GOOGLE_CLOUD_STORAGE_CREDENTIAL=/path/to/keyfile.json
+GOOGLE_CLOUD_STORAGE_BUCKET_NAME=flowise-storage
+```
+
+```bash Azure Blob (via S3 API)
+STORAGE_TYPE=s3
+S3_ENDPOINT_URL=https://<account>.blob.core.windows.net
+S3_STORAGE_BUCKET_NAME=flowise
+```
+</CodeGroup>
+
+### Secrets Management
+
+Use cloud-native secret managers:
+
+- **AWS**: Secrets Manager or Parameter Store
+- **Azure**: Key Vault
+- **GCP**: Secret Manager
+
+Configure Flowise:
+
+```bash
+SECRETKEY_STORAGE_TYPE=aws
+SECRETKEY_AWS_REGION=us-east-1
+SECRETKEY_AWS_NAME=FlowiseEncryptionKey
+SECRETKEY_AWS_ACCESS_KEY=<key>
+SECRETKEY_AWS_SECRET_KEY=<secret>
+```
+
+### Load Balancing
+
+Configure health checks:
+
+- **Path**: `/api/v1/ping`
+- **Port**: 3000 (or your configured PORT)
+- **Protocol**: HTTP
+- **Interval**: 30 seconds
+- **Timeout**: 5 seconds
+- **Healthy threshold**: 2
+- **Unhealthy threshold**: 3
+
+### SSL/TLS
+
+All major cloud providers offer SSL/TLS termination:
+
+- **AWS**: ACM + ALB
+- **Azure**: App Service SSL
+- **GCP**: Cloud Load Balancing with managed certificates
+- **Cloud Platforms**: Usually included automatically
+
+### Monitoring
+
+Enable metrics collection:
+
+```bash
+ENABLE_METRICS=true
+METRICS_PROVIDER=prometheus
+METRICS_INCLUDE_NODE_METRICS=true
+```
+
+Integrate with:
+- **AWS**: CloudWatch
+- **Azure**: Application Insights
+- **GCP**: Cloud Monitoring
+- **General**: Prometheus + Grafana
+
+## Cost Optimization
+
+### Resource Sizing
+
+Start small and scale:
+
+- **Development**: 1 vCPU, 2GB RAM
+- **Production (small)**: 2 vCPU, 4GB RAM
+- **Production (medium)**: 4 vCPU, 8GB RAM
+
+### Auto-scaling
+
+Configure based on CPU/memory:
+
+- **Target CPU**: 70%
+- **Min instances**: 2
+- **Max instances**: 10
+- **Scale-up**: Fast (1-2 minutes)
+- **Scale-down**: Slow (10-15 minutes)
+
+### Database Optimization
+
+Use appropriate tiers:
+- Development: Smallest tier (e.g., db.t3.micro)
+- Production: Burstable or general purpose tiers
+- High traffic: Memory-optimized tiers
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Environment Variables" icon="gear" href="/configuration/environment-variables">
+    Configure your cloud deployment
+  </Card>
+  <Card title="Docker Guide" icon="docker" href="/deployment/docker">
+    Learn about Docker deployments
+  </Card>
+  <Card title="Security Best Practices" icon="shield" href="/deployment/overview">
+    Secure your production instance
+  </Card>
+  <Card title="API Integration" icon="code" href="/api/overview">
+    Integrate with Flowise APIs
+  </Card>
+</CardGroup>

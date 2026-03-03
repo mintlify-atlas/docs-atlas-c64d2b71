@@ -1,0 +1,107 @@
+---
+title: 'Integrations Overview'
+description: 'Connect Flowise with 25+ integrations including LLMs, vector stores, document loaders, and tools'
+---
+
+Flowise provides a rich ecosystem of integrations to build powerful AI applications. Each integration is designed to work seamlessly within the visual workflow builder.
+
+## Categories
+
+<CardGroup cols={2}>
+  <Card title="Language Models" icon="brain" href="/integrations/llms/openai">
+    Connect to OpenAI, Anthropic, Google, Azure, and local models like Ollama
+  </Card>
+  <Card title="Vector Stores" icon="database" href="/integrations/vector-stores/pinecone">
+    Store and retrieve embeddings using Pinecone, Chroma, Qdrant, and more
+  </Card>
+  <Card title="Document Loaders" icon="file" href="/integrations/document-loaders/overview">
+    Load data from PDFs, websites, text files, and 30+ other sources
+  </Card>
+  <Card title="Tools & Agents" icon="wrench" href="/integrations/agents/overview">
+    Extend AI capabilities with calculators, web browsers, and custom tools
+  </Card>
+</CardGroup>
+
+## Quick Start
+
+<Steps>
+  <Step title="Choose Your Integration">
+    Browse available integrations in the Flowise canvas sidebar, organized by category
+  </Step>
+  
+  <Step title="Add Credentials">
+    Configure API keys and credentials in the Credentials section
+  </Step>
+  
+  <Step title="Drag and Connect">
+    Add nodes to your canvas and connect them to build your workflow
+  </Step>
+  
+  <Step title="Configure Parameters">
+    Adjust settings like temperature, chunk size, and model selection
+  </Step>
+</Steps>
+
+## Popular Integrations
+
+### Language Models
+- **OpenAI** - GPT-4, GPT-3.5, with function calling and vision support
+- **Anthropic** - Claude 3.5 Sonnet with extended thinking capabilities  
+- **Google** - Gemini 1.5 Pro/Flash with multimodal support
+- **Ollama** - Run Llama 2, Mistral, and other models locally
+
+### Vector Stores
+- **Pinecone** - Fully managed vector database with high performance
+- **Chroma** - Open-source embedding database for local development
+- **Qdrant** - Scalable vector search written in Rust
+- **Weaviate** - Open-source vector database with hybrid search
+
+### Document Loaders
+- **PDF** - Extract text from PDF files with page splitting
+- **Web Scraper** - Load content from websites with CSS selectors
+- **API** - Load data from REST APIs
+- **File Loaders** - Support for 30+ file formats
+
+## Integration Features
+
+<Note>
+All integrations support:
+- Visual configuration in the canvas
+- Environment variable support
+- Metadata filtering and customization
+- Batch processing where applicable
+</Note>
+
+## Common Parameters
+
+Most integrations share these common configuration options:
+
+<ParamField path="credential" type="credential" required>
+  API key or authentication credential for the service
+</ParamField>
+
+<ParamField path="cache" type="BaseCache">
+  Optional caching layer to reduce API calls and improve performance
+</ParamField>
+
+<ParamField path="metadata" type="json">
+  Additional metadata to attach to documents or requests
+</ParamField>
+
+## Best Practices
+
+1. **Use Environment Variables** - Store API keys in environment variables rather than hardcoding
+2. **Enable Caching** - Reduce costs by caching LLM responses
+3. **Set Appropriate Limits** - Configure timeouts and rate limits
+4. **Monitor Usage** - Track API usage to avoid unexpected costs
+5. **Test Locally** - Use Ollama or local models during development
+
+## Need Help?
+
+Each integration page includes:
+- Configuration parameters and descriptions
+- Code examples and usage patterns
+- Common use cases and troubleshooting tips
+- Links to official documentation
+
+Explore the integration categories to learn more about each available integration.

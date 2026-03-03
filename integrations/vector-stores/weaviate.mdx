@@ -1,0 +1,419 @@
+---
+title: 'Weaviate'
+description: 'Open-source vector database with GraphQL API and hybrid search capabilities'
+icon: 'w'
+---
+
+## Overview
+
+Weaviate is an open-source vector database that supports semantic search, hybrid search (combining keyword and vector search), and automatic schema inference. Built for production ML applications.
+
+## Setup
+
+<Tabs>
+  <Tab title="Local Docker">
+    Run Weaviate locally:
+    
+    ```bash
+    docker run -d \
+      -p 8080:8080 \
+      -e QUERY_DEFAULTS_LIMIT=25 \
+      -e AUTHENTICATION_ANONYMOUS_ACCESS_ENABLED=true \
+      -e PERSISTENCE_DATA_PATH='/var/lib/weaviate' \
+      semitechnologies/weaviate:latest
+    ```
+    
+    Configure in Flowise:
+    ```typescript
+    Weaviate Scheme: http
+    Weaviate Host: localhost:8080
+    Weaviate Index: MyCollection
+    ```
+  </Tab>
+  
+  <Tab title="Weaviate Cloud">
+    1. Sign up at [Weaviate Cloud Services](https://console.weaviate.cloud)
+    2. Create a cluster and get your URL and API key
+    3. Add Weaviate API credential in Flowise
+    4. Configure:
+    
+    ```typescript
+    Weaviate Scheme: https
+    Weaviate Host: my-cluster.weaviate.network
+    Credential: Weaviate API Key
+    Weaviate Index: MyCollection
+    ```
+  </Tab>
+  
+  <Tab title="Kubernetes">
+    Deploy with Helm:
+    
+    ```bash
+    helm repo add weaviate https://weaviate.github.io/weaviate-helm
+    helm install my-weaviate weaviate/weaviate
+    ```
+  </Tab>
+</Tabs>
+
+## Configuration
+
+### Required Parameters
+
+<ParamField path="weaviateScheme" type="string" required>
+  Connection scheme:
+  - `https` - For cloud or secured instances
+  - `http` - For local development
+</ParamField>
+
+<ParamField path="weaviateHost" type="string" required>
+  Weaviate server host (without scheme):
+  - Local: `localhost:8080`
+  - Cloud: `your-cluster.weaviate.network`
+</ParamField>
+
+<ParamField path="weaviateIndex" type="string" required>
+  Class/collection name (capitalized, e.g., `Documents`, `KnowledgeBase`)
+</ParamField>
+
+<ParamField path="embeddings" type="Embeddings" required>
+  Embedding model for vector generation
+</ParamField>
+
+### Optional Parameters
+
+<ParamField path="credential" type="credential">
+  Weaviate API key credential (for cloud-hosted instances)
+</ParamField>
+
+<ParamField path="document" type="Document[]">
+  Documents to upsert into the index
+</ParamField>
+
+<ParamField path="recordManager" type="RecordManager">
+  Track indexed documents to prevent duplication
+</ParamField>
+
+<ParamField path="weaviateTextKey" type="string" default="text">
+  Property name for storing document text
+</ParamField>
+
+<ParamField path="weaviateMetadataKeys" type="string">
+  Array of metadata keys to store as properties:
+  ```json
+  ["category", "author", "date"]
+  ```
+</ParamField>
+
+<ParamField path="weaviateFilter" type="json">
+  GraphQL-style filter for search:
+  ```json
+  {
+    "path": ["category"],
+    "operator": "Equal",
+    "valueText": "documentation"
+  }
+  ```
+</ParamField>
+
+<ParamField path="topK" type="number" default={4}>
+  Number of results to return
+</ParamField>
+
+### MMR (Maximal Marginal Relevance)
+
+<ParamField path="searchType" type="string">
+  Search mode:
+  - `similarity` - Standard vector similarity
+  - `mmr` - Diverse results with MMR
+</ParamField>
+
+<ParamField path="fetchK" type="number" default={20}>
+  Documents to fetch before MMR reranking
+</ParamField>
+
+<ParamField path="lambda" type="number" default={0.5}>
+  MMR diversity factor (0-1)
+</ParamField>
+
+### Hybrid Search
+
+<ParamField path="alpha" type="number" default={1}>
+  Weighting for hybrid search:
+  - `1` - Pure vector search
+  - `0.5` - Balanced hybrid
+  - `0` - Pure keyword (BM25) search
+</ParamField>
+
+## Usage Examples
+
+### Basic Local Setup
+
+```bash
+# Start Weaviate
+docker run -d -p 8080:8080 \
+  -e AUTHENTICATION_ANONYMOUS_ACCESS_ENABLED=true \
+  semitechnologies/weaviate:latest
+```
+
+```typescript
+// In Flowise
+Weaviate Scheme: http
+Weaviate Host: localhost:8080
+Weaviate Index: Documents
+Embeddings: OpenAI Embeddings
+Top K: 4
+```
+
+### Weaviate Cloud
+
+```typescript
+// Cloud configuration
+Weaviate Scheme: https
+Weaviate Host: my-cluster.weaviate.network
+Credential: Weaviate API Key
+Weaviate Index: ProductionDocs
+Embeddings: OpenAI Embeddings
+```
+
+### With Metadata Keys
+
+```typescript
+// Store specific metadata as properties
+Weaviate Index: Articles
+Weaviate Text Key: content
+Weaviate Metadata Keys: ["author", "category", "publishDate"]
+Embeddings: OpenAI Embeddings
+```
+
+### Hybrid Search
+
+```typescript
+// Combine keyword and semantic search
+Weaviate Index: SearchableDocs
+Alpha: 0.5  // 50% vector, 50% keyword
+Top K: 10
+Embeddings: OpenAI Embeddings
+```
+
+### With Filters
+
+```json
+// GraphQL-style filtering
+{
+  "weaviateFilter": {
+    "path": ["category"],
+    "operator": "Equal",
+    "valueText": "tutorial"
+  }
+}
+
+// Multiple conditions (AND)
+{
+  "weaviateFilter": {
+    "operator": "And",
+    "operands": [
+      {
+        "path": ["category"],
+        "operator": "Equal",
+        "valueText": "docs"
+      },
+      {
+        "path": ["year"],
+        "operator": "GreaterThanEqual",
+        "valueInt": 2023
+      }
+    ]
+  }
+}
+```
+
+## Weaviate Filter Syntax
+
+Weaviate uses GraphQL-style filters:
+
+### Simple Filters
+
+```json
+// Text equality
+{
+  "path": ["status"],
+  "operator": "Equal",
+  "valueText": "published"
+}
+
+// Numeric comparison
+{
+  "path": ["price"],
+  "operator": "GreaterThan",
+  "valueNumber": 10.0
+}
+
+// Boolean
+{
+  "path": ["featured"],
+  "operator": "Equal",
+  "valueBoolean": true
+}
+```
+
+### Operators
+
+- **Text**: `Equal`, `NotEqual`, `Like`
+- **Numeric**: `Equal`, `NotEqual`, `GreaterThan`, `GreaterThanEqual`, `LessThan`, `LessThanEqual`
+- **Boolean**: `Equal`, `NotEqual`
+- **Geo**: `WithinGeoRange`
+
+### Combining Filters
+
+```json
+// AND
+{
+  "operator": "And",
+  "operands": [
+    { "path": ["type"], "operator": "Equal", "valueText": "article" },
+    { "path": ["published"], "operator": "Equal", "valueBoolean": true }
+  ]
+}
+
+// OR
+{
+  "operator": "Or",
+  "operands": [
+    { "path": ["priority"], "operator": "Equal", "valueText": "high" },
+    { "path": ["urgent"], "operator": "Equal", "valueBoolean": true }
+  ]
+}
+```
+
+## Best Practices
+
+<CardGroup cols={2}>
+  <Card title="Schema Design" icon="sitemap">
+    - Use PascalCase for class names
+    - Define metadata keys upfront
+    - Use appropriate data types
+    - Plan for cross-references
+  </Card>
+  
+  <Card title="Hybrid Search" icon="magnifying-glass">
+    - Start with alpha=0.5
+    - Tune based on use case
+    - Monitor search quality
+    - Combine with filters
+  </Card>
+  
+  <Card title="Performance" icon="rocket">
+    - Use appropriate vector indexing
+    - Enable compression for large datasets
+    - Monitor shard count
+    - Implement caching
+  </Card>
+  
+  <Card title="Production" icon="shield">
+    - Enable authentication
+    - Set up replication
+    - Monitor resource usage
+    - Implement backup strategy
+  </Card>
+</CardGroup>
+
+## Advanced Features
+
+### Custom Vector Index
+
+```json
+// Configure HNSW parameters
+{
+  "vectorIndexConfig": {
+    "ef": 100,
+    "efConstruction": 128,
+    "maxConnections": 64
+  }
+}
+```
+
+### Multi-Tenancy
+
+Weaviate supports multi-tenant collections for data isolation.
+
+### Generative Search
+
+Combine vector search with LLM generation for RAG applications.
+
+## Common Issues
+
+<AccordionGroup>
+  <Accordion title="Class Name Error">
+    Error: "Class name must start with capital letter"
+    
+    **Solution:**
+    - Use PascalCase: `Documents` not `documents`
+    - Weaviate enforces capitalized class names
+    - Update Weaviate Index parameter
+  </Accordion>
+  
+  <Accordion title="Connection Failed">
+    Can't connect to Weaviate
+    
+    **Solution:**
+    - Verify Weaviate is running
+    - Check scheme (http vs https)
+    - Ensure port 8080 is accessible
+    - For cloud: verify API key
+  </Accordion>
+  
+  <Accordion title="Metadata Not Indexed">
+    Metadata fields missing from results
+    
+    **Solution:**
+    - Specify metadata keys in configuration
+    - Ensure keys are valid property names
+    - Check schema in Weaviate console
+    - Re-index if schema changed
+  </Accordion>
+  
+  <Accordion title="Hybrid Search Not Working">
+    Alpha parameter has no effect
+    
+    **Solution:**
+    - Ensure Weaviate version supports hybrid search
+    - Verify text properties exist
+    - Check if BM25 is enabled
+    - Test with alpha=0 and alpha=1 separately
+  </Accordion>
+</AccordionGroup>
+
+## Monitoring
+
+Weaviate provides REST API for monitoring:
+
+```bash
+# Health check
+curl http://localhost:8080/v1/.well-known/ready
+
+# Schema info
+curl http://localhost:8080/v1/schema
+
+# Class info
+curl http://localhost:8080/v1/schema/Documents
+
+# Metrics (Prometheus format)
+curl http://localhost:8080/metrics
+```
+
+## Outputs
+
+<ParamField path="retriever" type="VectorStoreRetriever">
+  Retriever with configured search type and filters
+</ParamField>
+
+<ParamField path="vectorStore" type="WeaviateVectorStore">
+  Direct vector store access for custom GraphQL queries
+</ParamField>
+
+## Related Resources
+
+- [Weaviate Documentation](https://weaviate.io/developers/weaviate)
+- [Weaviate Cloud](https://console.weaviate.cloud)
+- [GraphQL API](https://weaviate.io/developers/weaviate/api/graphql)
+- [Hybrid Search Guide](https://weaviate.io/developers/weaviate/search/hybrid)
