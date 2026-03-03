@@ -1,0 +1,175 @@
+{
+  "projectType": "saas",
+  "projectName": "Flowise",
+  "projectDescription": "Build AI Agents visually with a drag-and-drop interface for creating LLM flows and agent workflows.",
+  "theme": "palm",
+  "primaryColor": "#3B82F6",
+  "lightColor": "#60A5FA",
+  "darkColor": "#1E40AF",
+  "navigation": {
+    "tabs": [
+      {
+        "tab": "Documentation",
+        "groups": [
+          {
+            "group": "Get Started",
+            "pages": [
+              "introduction",
+              "quickstart",
+              "installation"
+            ]
+          },
+          {
+            "group": "Core Concepts",
+            "pages": [
+              "concepts/chatflows",
+              "concepts/agentflows",
+              "concepts/nodes",
+              "concepts/credentials"
+            ]
+          },
+          {
+            "group": "Building Flows",
+            "pages": [
+              "building/creating-chatflows",
+              "building/working-with-nodes",
+              "building/testing-debugging",
+              "building/variables-expressions"
+            ]
+          },
+          {
+            "group": "Deployment",
+            "pages": [
+              "deployment/overview",
+              "deployment/docker",
+              "deployment/cloud-providers",
+              "deployment/self-hosting"
+            ]
+          },
+          {
+            "group": "Configuration",
+            "pages": [
+              "configuration/environment-variables",
+              "configuration/authentication",
+              "configuration/database",
+              "configuration/storage"
+            ]
+          }
+        ]
+      },
+      {
+        "tab": "Integrations",
+        "groups": [
+          {
+            "group": "Overview",
+            "pages": [
+              "integrations/overview"
+            ]
+          },
+          {
+            "group": "Language Models",
+            "pages": [
+              "integrations/llms/openai",
+              "integrations/llms/anthropic",
+              "integrations/llms/azure-openai",
+              "integrations/llms/google",
+              "integrations/llms/ollama"
+            ]
+          },
+          {
+            "group": "Vector Stores",
+            "pages": [
+              "integrations/vector-stores/pinecone",
+              "integrations/vector-stores/chroma",
+              "integrations/vector-stores/qdrant",
+              "integrations/vector-stores/weaviate"
+            ]
+          },
+          {
+            "group": "Document Loaders",
+            "pages": [
+              "integrations/document-loaders/overview",
+              "integrations/document-loaders/pdf",
+              "integrations/document-loaders/web",
+              "integrations/document-loaders/text"
+            ]
+          },
+          {
+            "group": "Agents & Tools",
+            "pages": [
+              "integrations/agents/overview",
+              "integrations/tools/calculator",
+              "integrations/tools/web-browser",
+              "integrations/tools/custom-tools"
+            ]
+          }
+        ]
+      },
+      {
+        "tab": "API Reference",
+        "groups": [
+          {
+            "group": "Getting Started",
+            "pages": [
+              "api/overview",
+              "api/authentication"
+            ]
+          },
+          {
+            "group": "Endpoints",
+            "pages": [
+              "api/chatflows",
+              "api/predictions",
+              "api/vector-upsert",
+              "api/credentials",
+              "api/tools"
+            ]
+          }
+        ]
+      },
+      {
+        "tab": "Resources",
+        "groups": [
+          {
+            "group": "Community",
+            "pages": [
+              "resources/contributing",
+              "resources/community",
+              "resources/faq"
+            ]
+          },
+          {
+            "group": "Support",
+            "pages": [
+              "resources/troubleshooting",
+              "resources/changelog",
+              "resources/migration-guides"
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "keyFeatures": [
+    "Visual workflow builder for AI agents",
+    "Drag-and-drop interface for LLM flows",
+    "Support for 25+ integrations (OpenAI, Anthropic, LangChain)",
+    "Built-in vector database support",
+    "Custom tool and agent creation",
+    "REST API for programmatic access",
+    "Self-hosted and cloud deployment options",
+    "Multi-agent workflows and sequential agents"
+  ],
+  "publicApiSurface": [
+    "POST /api/v1/prediction/{chatflowId}",
+    "POST /api/v1/vector/upsert/{chatflowId}",
+    "GET /api/v1/chatflows",
+    "POST /api/v1/chatflows",
+    "GET /api/v1/credentials",
+    "POST /api/v1/credentials",
+    "GET /api/v1/tools",
+    "flowise start",
+    "flowise worker",
+    "flowise user"
+  ]
+}
